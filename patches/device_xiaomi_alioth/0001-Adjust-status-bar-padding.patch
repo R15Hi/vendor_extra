@@ -1,0 +1,27 @@
+From 5145f0ca7a165da69f739e532dcfe6ab497eed8b Mon Sep 17 00:00:00 2001
+From: flame-0 <fl4m3@pm.me>
+Date: Fri, 3 May 2024 11:57:29 +0800
+Subject: [PATCH] alioth: overlay: adjust status bar padding
+
+---
+ .../base/packages/SystemUI/res/values/dimens.xml         | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/overlay/frameworks/base/packages/SystemUI/res/values/dimens.xml b/overlay/frameworks/base/packages/SystemUI/res/values/dimens.xml
+index 935c482..7b6ccb9 100644
+--- a/overlay/frameworks/base/packages/SystemUI/res/values/dimens.xml
++++ b/overlay/frameworks/base/packages/SystemUI/res/values/dimens.xml
+@@ -46,4 +46,13 @@
+ 
+     <!-- the padding on the top of the statusbar (usually 0) -->
+     <dimen name="status_bar_padding_top">1px</dimen>
++
++    <!-- the padding on the start of the statusbar -->
++    <dimen name="status_bar_padding_start">4dp</dimen>
++
++    <!-- the padding on the end of the statusbar -->
++    <dimen name="status_bar_padding_end">0dp</dimen>
++
++    <!-- Margin on the left side of the carrier text on Keyguard -->
++    <dimen name="keyguard_carrier_text_margin">24dp</dimen>
+ </resources>

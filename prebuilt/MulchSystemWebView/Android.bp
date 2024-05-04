@@ -1,0 +1,13 @@
+android_app_import {
+    name: "MulchSystemWebView",
+    apk: "MulchSystemWebView.apk",
+    preprocessed: true,
+    presigned: true,
+    privileged: true,
+    product_specific: true,
+    skip_preprocessed_apk_checks: true,
+    dex_preopt: {
+        enabled: false,
+    },
+    overrides: ["webview"],
+}

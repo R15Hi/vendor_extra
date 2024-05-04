@@ -1,0 +1,836 @@
+From 335be99abe7bc400cb915bba4cc9a3a995149f43 Mon Sep 17 00:00:00 2001
+From: Chirayu Desai <chirayudesai1@gmail.com>
+Date: Fri, 14 Dec 2018 19:04:43 +0530
+Subject: [PATCH 2/2] Remove Lineage specific settings
+
+Remove unneeded Lineage specific pages in order to
+remove Lineage SDK dependency
+
+Co-authored-by: Michael Bestas <mkbestas@gmail.com>
+Change-Id: Iaea961fa1e01d597935783cd470e34bc662f2333
+---
+ AndroidManifest.xml                           |  44 --------
+ res/drawable/ic_system_update.xml             |  15 ---
+ res/layout/setup_device_specific.xml          |  10 --
+ res/layout/setup_lineage_settings.xml         |  75 -------------
+ res/layout/update_recovery_page.xml           |  71 ------------
+ res/raw/lineage_wizard_script.xml             |  18 ----
+ res/raw/wizard_script.xml                     |  12 +--
+ .../setupwizard/DeviceSpecificActivity.java   |  27 -----
+ .../lineageos/setupwizard/FinishActivity.java |  36 -------
+ .../setupwizard/LineageSettingsActivity.java  | 101 ------------------
+ .../NavigationSettingsActivity.java           |  17 +--
+ .../lineageos/setupwizard/SetupWizardApp.java |   4 -
+ .../setupwizard/UpdateRecoveryActivity.java   |  87 ---------------
+ .../setupwizard/util/SetupWizardUtils.java    |  60 ++++++-----
+ 14 files changed, 37 insertions(+), 540 deletions(-)
+ delete mode 100644 res/drawable/ic_system_update.xml
+ delete mode 100644 res/layout/setup_device_specific.xml
+ delete mode 100644 res/layout/setup_lineage_settings.xml
+ delete mode 100644 res/layout/update_recovery_page.xml
+ delete mode 100644 src/org/lineageos/setupwizard/DeviceSpecificActivity.java
+ delete mode 100644 src/org/lineageos/setupwizard/LineageSettingsActivity.java
+ delete mode 100644 src/org/lineageos/setupwizard/UpdateRecoveryActivity.java
+
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 69a15f3..4041483 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -27,12 +27,9 @@
+     <uses-permission android:name="android.permission.MANAGE_USERS" />
+     <uses-permission android:name="android.permission.CHANGE_COMPONENT_ENABLED_STATE" />
+     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+-    <uses-permission android:name="lineageos.permission.HARDWARE_ABSTRACTION_ACCESS" />
+     <uses-permission android:name="android.permission.BACKUP" />
+     <uses-permission android:name="android.permission.NETWORK_SETTINGS" />
+     <uses-permission android:name="lineageos.permission.FINISH_SETUP" />
+-    <uses-permission android:name="lineageos.permission.WRITE_SETTINGS" />
+-    <uses-permission android:name="lineageos.permission.WRITE_SECURE_SETTINGS" />
+ 
+     <permission
+         android:name="lineageos.permission.FINISH_SETUP"
+@@ -188,47 +185,6 @@
+             </intent-filter>
+         </activity>
+ 
+-        <activity
+-            android:name=".UpdateRecoveryActivity"
+-            android:label="@string/activity_label_empty"
+-            android:excludeFromRecents="true"
+-            android:configChanges="mcc|mnc"
+-            android:immersive="true"
+-            android:exported="true"
+-            android:windowSoftInputMode="stateAlwaysHidden">
+-            <intent-filter>
+-                <action android:name="org.lineageos.setupwizard.LINEAGE_RECOVERY_UPDATE" />
+-                <category android:name="android.intent.category.DEFAULT" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".DeviceSpecificActivity"
+-            android:label="@string/activity_label_empty"
+-            android:excludeFromRecents="true"
+-            android:immersive="true"
+-            android:exported="true"
+-            android:windowSoftInputMode="stateAlwaysHidden">
+-            <intent-filter>
+-                <action android:name="org.lineageos.setupwizard.DEVICE_SPECIFIC" />
+-                <category android:name="android.intent.category.DEFAULT" />
+-            </intent-filter>
+-        </activity>
+-
+-        <activity
+-            android:name=".LineageSettingsActivity"
+-            android:label="@string/activity_label_empty"
+-            android:excludeFromRecents="true"
+-            android:configChanges="mcc|mnc"
+-            android:immersive="true"
+-            android:exported="true"
+-            android:windowSoftInputMode="stateAlwaysHidden">
+-            <intent-filter>
+-                <action android:name="org.lineageos.setupwizard.LINEAGE_SETTINGS" />
+-                <category android:name="android.intent.category.DEFAULT" />
+-            </intent-filter>
+-        </activity>
+-
+         <activity
+             android:name=".NavigationSettingsActivity"
+             android:label="@string/activity_label_empty"
+diff --git a/res/drawable/ic_system_update.xml b/res/drawable/ic_system_update.xml
+deleted file mode 100644
+index 79f32fc..0000000
+--- a/res/drawable/ic_system_update.xml
++++ /dev/null
+@@ -1,15 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-     SPDX-FileCopyrightText: 2020 The LineageOS Project
+-     SPDX-License-Identifier: Apache-2.0
+--->
+-<vector xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:width="24dp"
+-    android:height="24dp"
+-    android:viewportWidth="24.0"
+-    android:viewportHeight="24.0">
+-
+-    <path
+-        android:fillColor="?android:colorControlNormal"
+-        android:pathData="M17,1.01L7,1c-1.1,0 -2,0.9 -2,2v18c0,1.1 0.9,2 2,2h10c1.1,0 2,-0.9 2,-2L19,3c0,-1.1 -0.9,-1.99 -2,-1.99zM17,19L7,19L7,5h10v14zM16,13h-3L13,8h-2v5L8,13l4,4 4,-4z" />
+-</vector>
+diff --git a/res/layout/setup_device_specific.xml b/res/layout/setup_device_specific.xml
+deleted file mode 100644
+index 53142e0..0000000
+--- a/res/layout/setup_device_specific.xml
++++ /dev/null
+@@ -1,10 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-     SPDX-FileCopyrightText: 2021 The LineageOS Project
+-     SPDX-License-Identifier: Apache-2.0
+--->
+-<LinearLayout
+-    xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:layout_width="match_parent"
+-    android:layout_height="match_parent"
+-    android:orientation="vertical" />
+diff --git a/res/layout/setup_lineage_settings.xml b/res/layout/setup_lineage_settings.xml
+deleted file mode 100644
+index ea2094f..0000000
+--- a/res/layout/setup_lineage_settings.xml
++++ /dev/null
+@@ -1,75 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-     SPDX-FileCopyrightText: 2015 The CyanogenMod Project
+-     SPDX-FileCopyrightText: 2017-2024 The LineageOS Project
+-     SPDX-License-Identifier: Apache-2.0
+--->
+-<com.google.android.setupdesign.GlifLayout
+-    xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:id="@+id/setup_wizard_layout"
+-    android:layout_width="match_parent"
+-    android:layout_height="match_parent">
+-
+-    <LinearLayout
+-        android:orientation="vertical"
+-        android:layout_width="match_parent"
+-        android:layout_height="match_parent"
+-        style="@style/SudContentFrame"
+-        android:layout_marginTop="@dimen/base_margin_top">
+-
+-        <FrameLayout
+-            android:id="@+id/page"
+-            android:layout_width="match_parent"
+-            android:layout_height="0dp"
+-            android:layout_weight="1">
+-
+-            <ScrollView
+-                android:layout_width="match_parent"
+-                android:layout_height="match_parent"
+-                android:fillViewport="true">
+-
+-                <LinearLayout
+-                    android:orientation="vertical"
+-                    android:layout_width="match_parent"
+-                    android:layout_height="match_parent">
+-
+-                    <!-- Checkbox for using on-screen nav keys -->
+-                    <LinearLayout
+-                        android:id="@+id/nav_keys"
+-                        android:orientation="horizontal"
+-                        android:layout_width="match_parent"
+-                        android:layout_height="wrap_content"
+-                        android:paddingLeft="@dimen/location_margin_left"
+-                        android:paddingRight="@dimen/content_margin_right"
+-                        android:background="?android:attr/selectableItemBackground"
+-                        android:clickable="true">
+-
+-                        <CheckBox
+-                            android:id="@+id/nav_keys_checkbox"
+-                            android:layout_width="wrap_content"
+-                            android:layout_height="wrap_content"
+-                            android:layout_gravity="top"
+-                            android:duplicateParentState="true"
+-                            android:clickable="false"
+-                            style="@style/SudCheckBox.Multiline" />
+-
+-                        <TextView
+-                            android:id="@+id/nav_keys_summary"
+-                            android:layout_width="wrap_content"
+-                            android:layout_height="wrap_content"
+-                            android:text="@string/services_os_nav_keys_label"
+-                            style="@style/SudCheckBox.Multiline" />
+-
+-                    </LinearLayout>
+-                </LinearLayout>
+-            </ScrollView>
+-        </FrameLayout>
+-
+-        <org.lineageos.setupwizard.NavigationLayout
+-            android:id="@+id/navigation_bar"
+-            android:layout_width="match_parent"
+-            android:layout_height="wrap_content" />
+-
+-    </LinearLayout>
+-</com.google.android.setupdesign.GlifLayout>
+-
+diff --git a/res/layout/update_recovery_page.xml b/res/layout/update_recovery_page.xml
+deleted file mode 100644
+index 6ecc366..0000000
+--- a/res/layout/update_recovery_page.xml
++++ /dev/null
+@@ -1,71 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-     SPDX-FileCopyrightText: 2015 The CyanogenMod Project
+-     SPDX-FileCopyrightText: 2017-2024 The LineageOS Project
+-     SPDX-License-Identifier: Apache-2.0
+--->
+-<com.google.android.setupdesign.GlifLayout
+-    xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:id="@+id/setup_wizard_layout"
+-    android:layout_width="match_parent"
+-    android:layout_height="match_parent">
+-
+-    <LinearLayout
+-        android:orientation="vertical"
+-        android:layout_width="match_parent"
+-        android:layout_height="match_parent"
+-        style="@style/SudContentFrame">
+-
+-        <FrameLayout
+-            android:id="@+id/page"
+-            android:layout_width="match_parent"
+-            android:layout_height="0dp"
+-            android:layout_weight="1">
+-
+-            <ScrollView
+-                android:layout_width="match_parent"
+-                android:layout_height="match_parent"
+-                android:fillViewport="true">
+-
+-                <LinearLayout
+-                    android:orientation="vertical"
+-                    android:layout_width="match_parent"
+-                    android:layout_height="match_parent">
+-
+-                    <LinearLayout
+-                        android:id="@+id/update_recovery_checkbox_view"
+-                        android:orientation="horizontal"
+-                        android:layout_width="match_parent"
+-                        android:layout_height="wrap_content"
+-                        android:paddingLeft="@dimen/location_margin_left"
+-                        android:paddingRight="@dimen/content_margin_right"
+-                        android:background="?android:attr/selectableItemBackground"
+-                        android:clickable="true">
+-
+-                        <CheckBox
+-                            android:id="@+id/update_recovery_checkbox"
+-                            android:layout_width="wrap_content"
+-                            android:layout_height="wrap_content"
+-                            android:duplicateParentState="true"
+-                            android:clickable="false"
+-                            style="@style/SudCheckBox.Multiline" />
+-
+-                        <TextView
+-                            android:layout_width="wrap_content"
+-                            android:layout_height="wrap_content"
+-                            android:text="@string/update_recovery_setting"
+-                            android:textStyle="bold"
+-                            style="@style/SudCheckBox.Multiline" />
+-
+-                    </LinearLayout>
+-                </LinearLayout>
+-            </ScrollView>
+-        </FrameLayout>
+-
+-        <org.lineageos.setupwizard.NavigationLayout
+-            android:id="@+id/navigation_bar"
+-            android:layout_width="match_parent"
+-            android:layout_height="wrap_content" />
+-
+-    </LinearLayout>
+-</com.google.android.setupdesign.GlifLayout>
+diff --git a/res/raw/lineage_wizard_script.xml b/res/raw/lineage_wizard_script.xml
+index 0befc2b..4fc70ff 100644
+--- a/res/raw/lineage_wizard_script.xml
++++ b/res/raw/lineage_wizard_script.xml
+@@ -52,24 +52,6 @@
+     <WizardAction
+         wizard:uri="intent:#Intent;action=org.lineageos.setupwizard.LINEAGE_LOCATION_SETTINGS;end"
+         id="location_settings">
+-        <result wizard:action="device_specific" />
+-    </WizardAction>
+-
+-    <WizardAction
+-        wizard:uri="intent:#Intent;action=org.lineageos.setupwizard.DEVICE_SPECIFIC;end"
+-        id="device_specific">
+-        <result wizard:action="recovery_update" />
+-    </WizardAction>
+-
+-    <WizardAction
+-        wizard:uri="intent:#Intent;action=org.lineageos.setupwizard.LINEAGE_RECOVERY_UPDATE;end"
+-        id="recovery_update">
+-        <result wizard:action="lineage_settings" />
+-    </WizardAction>
+-
+-    <WizardAction
+-        wizard:uri="intent:#Intent;action=org.lineageos.setupwizard.LINEAGE_SETTINGS;end"
+-        id="lineage_settings">
+         <result wizard:action="lockscreen_settings" />
+     </WizardAction>
+ 
+diff --git a/res/raw/wizard_script.xml b/res/raw/wizard_script.xml
+index 38ec267..77fbcc3 100644
+--- a/res/raw/wizard_script.xml
++++ b/res/raw/wizard_script.xml
+@@ -105,17 +105,7 @@
+     <WizardAction wizard:uri="intent:#Intent;package=org.lineageos.setupwizard;action=org.lineageos.setupwizard.LINEAGE_RESTORE_BACKUP;end" id="oem_post_setup">
+         <result wizard:action="device_specific" />
+     </WizardAction>
+-    <WizardAction wizard:uri="intent:#Intent;package=org.lineageos.setupwizard;action=org.lineageos.setupwizard.DEVICE_SPECIFIC;end" id="device_specific">
+-        <result wizard:action="recovery_update" />
+-    </WizardAction>
+-    <WizardAction wizard:uri="intent:#Intent;package=org.lineageos.setupwizard;action=org.lineageos.setupwizard.LINEAGE_RECOVERY_UPDATE;end" id="recovery_update">
+-        <result wizard:action="lineage_settings" />
+-    </WizardAction>
+-    <WizardAction wizard:uri="intent:#Intent;package=org.lineageos.setupwizard;action=org.lineageos.setupwizard.LINEAGE_SETTINGS;end" id="lineage_settings">
+-        <result wizard:action="theme_settings" />
+-    </WizardAction>
+-    <WizardAction wizard:uri="intent:#Intent;package=org.lineageos.setupwizard;action=org.lineageos.setupwizard.THEME_SETTINGS;end" id="theme_settings">
+-        <result wizard:action="navigation_settings" />
++    <WizardAction wizard:uri="intent:#Intent;action=org.lineageos.setupwizard.NAVIGATION_SETTINGS;end" id="oem_post_setup">
+     </WizardAction>
+     <WizardAction wizard:uri="intent:#Intent;package=org.lineageos.setupwizard;action=org.lineageos.setupwizard.NAVIGATION_SETTINGS;end" id="navigation_settings">
+         <result wizard:action="finish" />
+diff --git a/src/org/lineageos/setupwizard/DeviceSpecificActivity.java b/src/org/lineageos/setupwizard/DeviceSpecificActivity.java
+deleted file mode 100644
+index fee337f..0000000
+--- a/src/org/lineageos/setupwizard/DeviceSpecificActivity.java
++++ /dev/null
+@@ -1,27 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: 2021-2024 The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.setupwizard;
+-
+-import android.content.ComponentName;
+-import android.content.Intent;
+-
+-import org.lineageos.setupwizard.util.SetupWizardUtils;
+-
+-public class DeviceSpecificActivity extends SubBaseActivity {
+-
+-    private static final String ACTION_SETUP_DEVICE = "org.lineageos.settings.device.SUW_SETTINGS";
+-
+-    protected void onStartSubactivity() {
+-        Intent intent = new Intent(ACTION_SETUP_DEVICE);
+-        ComponentName name = intent.resolveActivity(getPackageManager());
+-        if (name != null) {
+-            startSubactivity(intent);
+-        } else {
+-            SetupWizardUtils.disableComponent(this, DeviceSpecificActivity.class);
+-            finishAction(RESULT_OK);
+-        }
+-    }
+-}
+diff --git a/src/org/lineageos/setupwizard/FinishActivity.java b/src/org/lineageos/setupwizard/FinishActivity.java
+index 11348fe..0bdf268 100644
+--- a/src/org/lineageos/setupwizard/FinishActivity.java
++++ b/src/org/lineageos/setupwizard/FinishActivity.java
+@@ -12,11 +12,8 @@ import static android.os.UserHandle.USER_CURRENT;
+ import static org.lineageos.setupwizard.Manifest.permission.FINISH_SETUP;
+ import static org.lineageos.setupwizard.SetupWizardApp.ACTION_FINISHED;
+ import static org.lineageos.setupwizard.SetupWizardApp.ACTION_SETUP_COMPLETE;
+-import static org.lineageos.setupwizard.SetupWizardApp.DISABLE_NAV_KEYS;
+-import static org.lineageos.setupwizard.SetupWizardApp.ENABLE_RECOVERY_UPDATE;
+ import static org.lineageos.setupwizard.SetupWizardApp.LOGV;
+ import static org.lineageos.setupwizard.SetupWizardApp.NAVIGATION_OPTION_KEY;
+-import static org.lineageos.setupwizard.SetupWizardApp.UPDATE_RECOVERY_PROP;
+ 
+ import android.animation.Animator;
+ import android.animation.AnimatorListenerAdapter;
+@@ -34,8 +31,6 @@ import android.os.Bundle;
+ import android.os.Handler;
+ import android.os.Looper;
+ import android.os.ServiceManager;
+-import android.os.SystemProperties;
+-import android.os.UserHandle;
+ import android.util.Log;
+ import android.view.View;
+ import android.view.ViewAnimationUtils;
+@@ -47,8 +42,6 @@ import androidx.core.graphics.Insets;
+ import androidx.core.view.ViewCompat;
+ import androidx.core.view.WindowInsetsCompat;
+ 
+-import lineageos.providers.LineageSettings;
+-
+ import org.lineageos.setupwizard.util.SetupWizardUtils;
+ 
+ public class FinishActivity extends BaseSetupWizardActivity {
+@@ -171,8 +164,6 @@ public class FinishActivity extends BaseSetupWizardActivity {
+     }
+ 
+     private void completeSetup() {
+-        handleNavKeys(mSetupWizardApp);
+-        handleRecoveryUpdate(mSetupWizardApp);
+         handleNavigationOption(mSetupWizardApp);
+         final WallpaperManager wallpaperManager =
+                 WallpaperManager.getInstance(mSetupWizardApp);
+@@ -183,22 +174,6 @@ public class FinishActivity extends BaseSetupWizardActivity {
+         Log.i(TAG, "Setup complete!");
+     }
+ 
+-    private static void handleNavKeys(SetupWizardApp setupWizardApp) {
+-        if (setupWizardApp.getSettingsBundle().containsKey(DISABLE_NAV_KEYS)) {
+-            writeDisableNavkeysOption(setupWizardApp,
+-                    setupWizardApp.getSettingsBundle().getBoolean(DISABLE_NAV_KEYS));
+-        }
+-    }
+-
+-    private static void handleRecoveryUpdate(SetupWizardApp setupWizardApp) {
+-        if (setupWizardApp.getSettingsBundle().containsKey(ENABLE_RECOVERY_UPDATE)) {
+-            boolean update = setupWizardApp.getSettingsBundle()
+-                    .getBoolean(ENABLE_RECOVERY_UPDATE);
+-
+-            SystemProperties.set(UPDATE_RECOVERY_PROP, String.valueOf(update));
+-        }
+-    }
+-
+     private void handleNavigationOption(Context context) {
+         Bundle settingsBundle = mSetupWizardApp.getSettingsBundle();
+         if (settingsBundle.containsKey(NAVIGATION_OPTION_KEY)) {
+@@ -212,15 +187,4 @@ public class FinishActivity extends BaseSetupWizardActivity {
+             }
+         }
+     }
+-
+-    private static void writeDisableNavkeysOption(Context context, boolean enabled) {
+-        final boolean virtualKeysEnabled = LineageSettings.System.getIntForUser(
+-                context.getContentResolver(), LineageSettings.System.FORCE_SHOW_NAVBAR, 0,
+-                UserHandle.USER_CURRENT) != 0;
+-        if (enabled != virtualKeysEnabled) {
+-            LineageSettings.System.putIntForUser(context.getContentResolver(),
+-                    LineageSettings.System.FORCE_SHOW_NAVBAR, enabled ? 1 : 0,
+-                    UserHandle.USER_CURRENT);
+-        }
+-    }
+ }
+diff --git a/src/org/lineageos/setupwizard/LineageSettingsActivity.java b/src/org/lineageos/setupwizard/LineageSettingsActivity.java
+deleted file mode 100644
+index 0632e32..0000000
+--- a/src/org/lineageos/setupwizard/LineageSettingsActivity.java
++++ /dev/null
+@@ -1,101 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: 2016 The CyanogenMod Project
+- * SPDX-FileCopyrightText: 2017-2024 The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.setupwizard;
+-
+-import static org.lineageos.setupwizard.SetupWizardApp.DISABLE_NAV_KEYS;
+-
+-import android.content.Context;
+-import android.os.Bundle;
+-import android.os.UserHandle;
+-import android.text.Spannable;
+-import android.text.SpannableStringBuilder;
+-import android.view.View;
+-import android.widget.CheckBox;
+-import android.widget.TextView;
+-
+-import lineageos.hardware.LineageHardwareManager;
+-import lineageos.providers.LineageSettings;
+-
+-public class LineageSettingsActivity extends BaseSetupWizardActivity {
+-
+-    private SetupWizardApp mSetupWizardApp;
+-
+-    private CheckBox mNavKeys;
+-
+-    private boolean mSupportsKeyDisabler = false;
+-
+-    private final View.OnClickListener mNavKeysClickListener = view -> {
+-        boolean checked = !mNavKeys.isChecked();
+-        mNavKeys.setChecked(checked);
+-        mSetupWizardApp.getSettingsBundle().putBoolean(DISABLE_NAV_KEYS, checked);
+-    };
+-
+-    @Override
+-    protected void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        mSetupWizardApp = (SetupWizardApp) getApplication();
+-        setNextText(R.string.next);
+-
+-        String os_name = getString(R.string.os_name);
+-        String privacyPolicy = getString(R.string.services_pp_explanation, os_name);
+-        String privacyPolicyUri = getString(R.string.services_privacy_policy_uri);
+-        String policySummary = getString(R.string.services_find_privacy_policy, privacyPolicyUri);
+-        String servicesFullDescription = getString(R.string.services_full_description,
+-                privacyPolicy, policySummary);
+-        getGlifLayout().setDescriptionText(servicesFullDescription);
+-
+-        View navKeysRow = findViewById(R.id.nav_keys);
+-        navKeysRow.setOnClickListener(mNavKeysClickListener);
+-        mNavKeys = findViewById(R.id.nav_keys_checkbox);
+-        mSupportsKeyDisabler = isKeyDisablerSupported(this);
+-        if (mSupportsKeyDisabler) {
+-            mNavKeys.setChecked(LineageSettings.System.getIntForUser(getContentResolver(),
+-                    LineageSettings.System.FORCE_SHOW_NAVBAR, 0, UserHandle.USER_CURRENT) != 0);
+-        } else {
+-            navKeysRow.setVisibility(View.GONE);
+-        }
+-    }
+-
+-    @Override
+-    public void onResume() {
+-        super.onResume();
+-        updateDisableNavkeysOption();
+-    }
+-
+-    @Override
+-    protected int getLayoutResId() {
+-        return R.layout.setup_lineage_settings;
+-    }
+-
+-    @Override
+-    protected int getTitleResId() {
+-        return R.string.setup_services;
+-    }
+-
+-    @Override
+-    protected int getIconResId() {
+-        return R.drawable.ic_features;
+-    }
+-
+-    private void updateDisableNavkeysOption() {
+-        if (mSupportsKeyDisabler) {
+-            final Bundle myPageBundle = mSetupWizardApp.getSettingsBundle();
+-            boolean enabled = LineageSettings.System.getIntForUser(getContentResolver(),
+-                    LineageSettings.System.FORCE_SHOW_NAVBAR, 0, UserHandle.USER_CURRENT) != 0;
+-            boolean checked = myPageBundle.containsKey(DISABLE_NAV_KEYS) ?
+-                    myPageBundle.getBoolean(DISABLE_NAV_KEYS) :
+-                    enabled;
+-            mNavKeys.setChecked(checked);
+-            myPageBundle.putBoolean(DISABLE_NAV_KEYS, checked);
+-        }
+-    }
+-
+-    private static boolean isKeyDisablerSupported(Context context) {
+-        final LineageHardwareManager hardware = LineageHardwareManager.getInstance(context);
+-        return hardware.isSupported(LineageHardwareManager.FEATURE_KEY_DISABLE);
+-    }
+-}
+diff --git a/src/org/lineageos/setupwizard/NavigationSettingsActivity.java b/src/org/lineageos/setupwizard/NavigationSettingsActivity.java
+index 65d7b92..bfa63bb 100644
+--- a/src/org/lineageos/setupwizard/NavigationSettingsActivity.java
++++ b/src/org/lineageos/setupwizard/NavigationSettingsActivity.java
+@@ -11,8 +11,6 @@ import static android.view.WindowManagerPolicyConstants.NAV_BAR_MODE_GESTURAL_OV
+ 
+ import static com.android.systemui.shared.recents.utilities.Utilities.isLargeScreen;
+ 
+-import static org.lineageos.internal.util.DeviceKeysConstants.KEY_MASK_APP_SWITCH;
+-import static org.lineageos.setupwizard.SetupWizardApp.DISABLE_NAV_KEYS;
+ import static org.lineageos.setupwizard.SetupWizardApp.NAVIGATION_OPTION_KEY;
+ 
+ import android.animation.Animator;
+@@ -45,16 +43,6 @@ public class NavigationSettingsActivity extends BaseSetupWizardActivity {
+         super.onCreate(savedInstanceState);
+ 
+         mSetupWizardApp = (SetupWizardApp) getApplication();
+-        boolean navBarEnabled = false;
+-        if (mSetupWizardApp.getSettingsBundle().containsKey(DISABLE_NAV_KEYS)) {
+-            navBarEnabled = mSetupWizardApp.getSettingsBundle().getBoolean(DISABLE_NAV_KEYS);
+-        }
+-        mIsTaskbarEnabled = LineageSettings.System.getInt(getContentResolver(),
+-                LineageSettings.System.ENABLE_TASKBAR, isLargeScreen(this) ? 1 : 0) == 1;
+-
+-        int deviceKeys = getResources().getInteger(
+-                org.lineageos.platform.internal.R.integer.config_deviceHardwareKeys);
+-        boolean hasHomeKey = (deviceKeys & KEY_MASK_APP_SWITCH) != 0;
+ 
+         getGlifLayout().setDescriptionText(getString(R.string.navigation_summary));
+         setNextText(R.string.next);
+@@ -77,9 +65,8 @@ public class NavigationSettingsActivity extends BaseSetupWizardActivity {
+             available--;
+         }
+ 
+-        // Hide this page if the device has hardware keys but didn't enable navbar
+-        // or if there's <= 1 available navigation modes
+-        if (!navBarEnabled && hasHomeKey || available <= 1) {
++        // Hide this page if there's <= 1 available navigation modes
++        if (available <= 1) {
+             mSetupWizardApp.getSettingsBundle().putString(NAVIGATION_OPTION_KEY,
+                     NAV_BAR_MODE_3BUTTON_OVERLAY);
+             finishAction(RESULT_OK);
+diff --git a/src/org/lineageos/setupwizard/SetupWizardApp.java b/src/org/lineageos/setupwizard/SetupWizardApp.java
+index d7aa052..4731b65 100644
+--- a/src/org/lineageos/setupwizard/SetupWizardApp.java
++++ b/src/org/lineageos/setupwizard/SetupWizardApp.java
+@@ -44,10 +44,6 @@ public class SetupWizardApp extends Application {
+     public static final String EXTRA_PREFS_SET_BACK_TEXT = "extra_prefs_set_back_text";
+     public static final String EXTRA_ENABLE_NEXT_ON_CONNECT = "wifi_enable_next_on_connect";
+ 
+-    public static final String DISABLE_NAV_KEYS = "disable_nav_keys";
+-    public static final String ENABLE_RECOVERY_UPDATE = "enable_recovery_update";
+-    public static final String UPDATE_RECOVERY_PROP = "persist.vendor.recovery_update";
+-
+     public static final String NAVIGATION_OPTION_KEY = "navigation_option";
+ 
+     public static final int RADIO_READY_TIMEOUT = 10 * 1000;
+diff --git a/src/org/lineageos/setupwizard/UpdateRecoveryActivity.java b/src/org/lineageos/setupwizard/UpdateRecoveryActivity.java
+deleted file mode 100644
+index 7ce3080..0000000
+--- a/src/org/lineageos/setupwizard/UpdateRecoveryActivity.java
++++ /dev/null
+@@ -1,87 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: 2020-2024 The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.setupwizard;
+-
+-import static com.google.android.setupcompat.util.ResultCodes.RESULT_SKIP;
+-
+-import static org.lineageos.setupwizard.SetupWizardApp.ENABLE_RECOVERY_UPDATE;
+-import static org.lineageos.setupwizard.SetupWizardApp.UPDATE_RECOVERY_PROP;
+-
+-import android.os.Bundle;
+-import android.os.SystemProperties;
+-import android.util.Log;
+-import android.view.View;
+-import android.widget.CheckBox;
+-
+-import org.lineageos.setupwizard.util.SetupWizardUtils;
+-
+-public class UpdateRecoveryActivity extends BaseSetupWizardActivity {
+-
+-    private CheckBox mRecoveryUpdateCheckbox;
+-    private SetupWizardApp mSetupWizardApp;
+-    private static boolean sFirstTime = true;
+-
+-    @Override
+-    protected void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        mSetupWizardApp = (SetupWizardApp) getApplication();
+-        getGlifLayout().setDescriptionText(getString(R.string.update_recovery_full_description,
+-                getString(R.string.update_recovery_description),
+-                getString(R.string.update_recovery_warning)));
+-
+-        if (!SetupWizardUtils.hasRecoveryUpdater(this)) {
+-            Log.v(TAG, "No recovery updater, skipping UpdateRecoveryActivity");
+-            finishAction(RESULT_SKIP);
+-            return;
+-        }
+-
+-        setNextText(R.string.next);
+-        mRecoveryUpdateCheckbox = findViewById(R.id.update_recovery_checkbox);
+-
+-        View cbView = findViewById(R.id.update_recovery_checkbox_view);
+-        cbView.setOnClickListener(
+-                v -> mRecoveryUpdateCheckbox.setChecked(!mRecoveryUpdateCheckbox.isChecked()));
+-
+-        // Allow overriding the default checkbox state
+-        if (sFirstTime) {
+-            mSetupWizardApp.getSettingsBundle().putBoolean(ENABLE_RECOVERY_UPDATE,
+-                    SystemProperties.getBoolean(UPDATE_RECOVERY_PROP, false));
+-        }
+-
+-        sFirstTime = false;
+-    }
+-
+-    @Override
+-    public void onResume() {
+-        super.onResume();
+-
+-        final Bundle myPageBundle = mSetupWizardApp.getSettingsBundle();
+-        final boolean checked = myPageBundle.getBoolean(ENABLE_RECOVERY_UPDATE, false);
+-        mRecoveryUpdateCheckbox.setChecked(checked);
+-    }
+-
+-    @Override
+-    protected void onNextPressed() {
+-        mSetupWizardApp.getSettingsBundle().putBoolean(ENABLE_RECOVERY_UPDATE,
+-                mRecoveryUpdateCheckbox.isChecked());
+-        super.onNextPressed();
+-    }
+-
+-    @Override
+-    protected int getLayoutResId() {
+-        return R.layout.update_recovery_page;
+-    }
+-
+-    @Override
+-    protected int getTitleResId() {
+-        return R.string.update_recovery_title;
+-    }
+-
+-    @Override
+-    protected int getIconResId() {
+-        return R.drawable.ic_system_update;
+-    }
+-}
+diff --git a/src/org/lineageos/setupwizard/util/SetupWizardUtils.java b/src/org/lineageos/setupwizard/util/SetupWizardUtils.java
+index 1cfdfa4..d354eda 100644
+--- a/src/org/lineageos/setupwizard/util/SetupWizardUtils.java
++++ b/src/org/lineageos/setupwizard/util/SetupWizardUtils.java
+@@ -27,11 +27,11 @@ import android.content.ContentResolver;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.SharedPreferences;
++import android.content.pm.ApplicationInfo;
+ import android.content.pm.ComponentInfo;
+ import android.content.pm.PackageInfo;
+ import android.content.pm.PackageManager;
+ import android.content.pm.ServiceInfo;
+-import android.content.res.Resources;
+ import android.hardware.biometrics.BiometricManager;
+ import android.net.ConnectivityManager;
+ import android.net.NetworkCapabilities;
+@@ -51,7 +51,6 @@ import androidx.work.OneTimeWorkRequest;
+ import androidx.work.OutOfQuotaPolicy;
+ import androidx.work.WorkManager;
+ 
+-import org.lineageos.internal.util.PackageManagerUtils;
+ import org.lineageos.setupwizard.BiometricActivity;
+ import org.lineageos.setupwizard.BluetoothSetupActivity;
+ import org.lineageos.setupwizard.NetworkSetupActivity;
+@@ -60,7 +59,6 @@ import org.lineageos.setupwizard.SetupWizardApp;
+ import org.lineageos.setupwizard.SetupWizardExitWorker;
+ import org.lineageos.setupwizard.SimMissingActivity;
+ 
+-import java.io.File;
+ import java.util.ArrayList;
+ import java.util.List;
+ 
+@@ -71,10 +69,7 @@ public class SetupWizardUtils {
+     private static final String GMS_PACKAGE = "com.google.android.gms";
+     private static final String GMS_SUW_PACKAGE = "com.google.android.setupwizard";
+     private static final String GMS_TV_SUW_PACKAGE = "com.google.android.tungsten.setupwraith";
+-    private static final String UPDATER_PACKAGE = "org.lineageos.updater";
+ 
+-    private static final String UPDATE_RECOVERY_EXEC = "/vendor/bin/install-recovery.sh";
+-    private static final String CONFIG_HIDE_RECOVERY_UPDATE = "config_hideRecoveryUpdate";
+     private static final String PROP_BUILD_DATE = "ro.build.date.utc";
+ 
+     private SetupWizardUtils() {
+@@ -94,24 +89,6 @@ public class SetupWizardUtils {
+         return packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY);
+     }
+ 
+-    public static boolean hasRecoveryUpdater(Context context) {
+-        boolean fileExists = new File(UPDATE_RECOVERY_EXEC).exists();
+-        if (!fileExists) {
+-            return false;
+-        }
+-
+-        boolean featureHidden = false;
+-        try {
+-            PackageManager pm = context.getPackageManager();
+-            Resources updaterResources = pm.getResourcesForApplication(UPDATER_PACKAGE);
+-            int res = updaterResources.getIdentifier(
+-                    CONFIG_HIDE_RECOVERY_UPDATE, "bool", UPDATER_PACKAGE);
+-            featureHidden = updaterResources.getBoolean(res);
+-        } catch (PackageManager.NameNotFoundException | Resources.NotFoundException ignored) {
+-        }
+-        return !featureHidden;
+-    }
+-
+     public static boolean isOwner() {
+         return UserHandle.myUserId() == 0;
+     }
+@@ -153,8 +130,8 @@ public class SetupWizardUtils {
+     public static boolean hasGMS(Context context) {
+         String gmsSuwPackage = hasLeanback(context) ? GMS_TV_SUW_PACKAGE : GMS_SUW_PACKAGE;
+ 
+-        if (PackageManagerUtils.isAppInstalled(context, GMS_PACKAGE) &&
+-                PackageManagerUtils.isAppInstalled(context, gmsSuwPackage)) {
++        if (isAppInstalled(context, GMS_PACKAGE) &&
++                isAppInstalled(context, gmsSuwPackage)) {
+             PackageManager packageManager = context.getPackageManager();
+             if (LOGV) {
+                 Log.v(TAG, GMS_SUW_PACKAGE + " state = " +
+@@ -364,6 +341,37 @@ public class SetupWizardUtils {
+         return SystemProperties.getLong(PROP_BUILD_DATE, 0);
+     }
+ 
++    /**
++     * Checks whether a given package exists
++     *
++     * @param context
++     * @param packageName
++     * @return true if the package exists
++     */
++    public static boolean isAppInstalled(final Context context, final String packageName) {
++        return getApplicationInfo(context, packageName, 0) != null;
++    }
++
++    /**
++     * Get the ApplicationInfo of a package
++     *
++     * @param context
++     * @param packageName
++     * @param flags
++     * @return null if the package cannot be found or the ApplicationInfo is null
++     */
++    public static ApplicationInfo getApplicationInfo(final Context context,
++                                                     final String packageName, final int flags) {
++        final PackageManager packageManager = context.getPackageManager();
++        ApplicationInfo info;
++        try {
++            info = packageManager.getApplicationInfo(packageName, flags);
++        } catch (PackageManager.NameNotFoundException e) {
++            info = null;
++        }
++        return info;
++    }
++
+     public static boolean simMissing(Context context) {
+         TelephonyManager tm = context.getSystemService(TelephonyManager.class);
+         SubscriptionManager sm = context.getSystemService(SubscriptionManager.class);

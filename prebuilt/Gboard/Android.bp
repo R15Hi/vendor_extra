@@ -1,0 +1,25 @@
+prebuilt_etc {
+    name: "privapp-permissions-com.google.android.inputmethod.latin.xml",
+    src: "privapp-permissions-com.google.android.inputmethod.latin.xml",
+    product_specific: true,
+    relative_install_path: "permissions",
+}
+
+android_app_import {
+    name: "Gboard",
+    apk: "Gboard.apk",
+    preprocessed: true,
+    presigned: true,
+    privileged: true,
+    product_specific: true,
+    skip_preprocessed_apk_checks: true,
+    dex_preopt: {
+        enabled: false,
+    },
+    optional_uses_libs: [
+        "androidx.window.extensions",
+        "androidx.window.sidecar",
+    ],
+    overrides: ["LatinIME"],
+    required: ["privapp-permissions-com.google.android.inputmethod.latin.xml"],
+}

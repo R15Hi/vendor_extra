@@ -1,0 +1,808 @@
+From b669fde8d95da46f13d092cc705a213d55f78cc1 Mon Sep 17 00:00:00 2001
+From: Tad <tad@spotco.us>
+Date: Tue, 14 Apr 2020 17:03:26 -0400
+Subject: [PATCH] Remove analytics
+
+Change-Id: Ic01c97d6ceac8d324609763973639b41b4581a76
+---
+ AndroidManifest.xml                           |  22 --
+ proguard.flags                                |   1 -
+ res/values/config.xml                         |   3 -
+ res/xml/anonymous_stats.xml                   |  23 --
+ res/xml/parts_catalog.xml                     |   5 -
+ res/xml/preview_data.xml                      |  42 ----
+ res/xml/trust_preferences.xml                 |   3 -
+ .../lineagestats/AnonymousStats.java          |  63 ------
+ .../lineagestats/PreviewData.java             |  39 ----
+ .../lineagestats/ReportingService.java        |  73 -------
+ .../lineagestats/ReportingServiceManager.java |  96 ---------
+ .../lineagestats/StatsUploadJobService.java   | 200 ------------------
+ .../lineageparts/lineagestats/Utilities.java  | 105 ---------
+ 13 files changed, 675 deletions(-)
+ delete mode 100644 res/xml/anonymous_stats.xml
+ delete mode 100644 res/xml/preview_data.xml
+ delete mode 100644 src/org/lineageos/lineageparts/lineagestats/AnonymousStats.java
+ delete mode 100644 src/org/lineageos/lineageparts/lineagestats/PreviewData.java
+ delete mode 100644 src/org/lineageos/lineageparts/lineagestats/ReportingService.java
+ delete mode 100644 src/org/lineageos/lineageparts/lineagestats/ReportingServiceManager.java
+ delete mode 100644 src/org/lineageos/lineageparts/lineagestats/StatsUploadJobService.java
+ delete mode 100644 src/org/lineageos/lineageparts/lineagestats/Utilities.java
+
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 35574d2..ea68c4f 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -269,28 +269,6 @@
+                 android:resource="@string/summary_empty" />
+         </activity-alias>
+ 
+-        <!-- Anonymous Statistics -->
+-        <receiver
+-            android:name=".lineagestats.ReportingServiceManager"
+-            android:enabled="true"
+-            android:exported="false"
+-            android:label="ReportingServiceManager">
+-            <intent-filter>
+-                <action android:name="android.intent.action.BOOT_COMPLETED" />
+-                <action android:name="org.lineageos.lineageparts.action.TRIGGER_REPORT_METRICS" />
+-            </intent-filter>
+-        </receiver>
+-
+-        <service
+-            android:name=".lineagestats.ReportingService"
+-            android:enabled="true"
+-            android:exported="false"
+-            android:label="ReportingService" />
+-
+-        <service
+-            android:name=".lineagestats.StatsUploadJobService"
+-            android:permission="android.permission.BIND_JOB_SERVICE" />
+-
+         <activity
+             android:name=".profiles.NFCProfile"
+             android:exported="true">
+diff --git a/proguard.flags b/proguard.flags
+index cfbdae3..8991f2b 100644
+--- a/proguard.flags
++++ b/proguard.flags
+@@ -11,7 +11,6 @@
+ -keep class org.lineageos.lineageparts.gestures.*
+ -keep class org.lineageos.lineageparts.hardware.*
+ -keep class org.lineageos.lineageparts.input.*
+--keep class org.lineageos.lineageparts.lineagestats.*
+ -keep class org.lineageos.lineageparts.livedisplay.*
+ -keep class org.lineageos.lineageparts.notificationlight.*
+ -keep class org.lineageos.lineageparts.power.*
+diff --git a/res/values/config.xml b/res/values/config.xml
+index adfcaa4..4c575f2 100644
+--- a/res/values/config.xml
++++ b/res/values/config.xml
+@@ -6,9 +6,6 @@
+ -->
+ <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+ 
+-    <!-- Metrics server endpoint -->
+-    <string name="stats_lineage_url">https://stats.lineageos.org/api/v1/stats</string>
+-
+     <!-- Default action ids for a device's touchscreen gestures
+          The array should be sorted in the same order as the
+          touchscreen gestures advertised by the device's LineageHW impl. -->
+diff --git a/res/xml/anonymous_stats.xml b/res/xml/anonymous_stats.xml
+deleted file mode 100644
+index 898bc74..0000000
+--- a/res/xml/anonymous_stats.xml
++++ /dev/null
+@@ -1,23 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-     SPDX-FileCopyrightText: 2016 The CyanogenMod Project
+-     SPDX-FileCopyrightText: 2017,2021 The LineageOS Project
+-     SPDX-License-Identifier: Apache-2.0
+--->
+-
+-<PreferenceScreen
+-    xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:key="lineagestats"
+-    android:title="@string/anonymous_statistics_title">
+-
+-    <lineageos.preference.LineageSecureSettingSwitchPreference
+-            android:key="stats_collection"
+-            android:title="@string/stats_collection_title"
+-            android:summary="@string/stats_collection_summary"
+-            android:defaultValue="true" />
+-
+-    <Preference
+-        android:title="@string/preview_data_title"
+-        android:fragment="org.lineageos.lineageparts.lineagestats.PreviewData" />
+-
+-</PreferenceScreen>
+diff --git a/res/xml/parts_catalog.xml b/res/xml/parts_catalog.xml
+index d6b19c0..e356517 100644
+--- a/res/xml/parts_catalog.xml
++++ b/res/xml/parts_catalog.xml
+@@ -64,11 +64,6 @@
+           android:fragment="org.lineageos.lineageparts.statusbar.StatusBarSettings"
+           lineage:xmlRes="@xml/status_bar_settings" />
+ 
+-    <part android:key="lineagestats"
+-          android:title="@string/anonymous_statistics_title"
+-          android:fragment="org.lineageos.lineageparts.lineagestats.AnonymousStats"
+-          lineage:xmlRes="@xml/anonymous_stats" />
+-
+     <part android:key="power_menu"
+           android:title="@string/power_menu_title"
+           android:fragment="org.lineageos.lineageparts.input.PowerMenuActions"
+diff --git a/res/xml/preview_data.xml b/res/xml/preview_data.xml
+deleted file mode 100644
+index a554bf2..0000000
+--- a/res/xml/preview_data.xml
++++ /dev/null
+@@ -1,42 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<!--
+-     SPDX-FileCopyrightText: 2012 The CyanogenMod Project
+-     SPDX-License-Identifier: Apache-2.0
+--->
+-
+-<PreferenceScreen
+-    xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:title="@string/preview_data_title">
+-
+-    <Preference
+-        android:key="preview_id"
+-        style="?android:preferenceInformationStyle"
+-        android:title="@string/preview_id_title"
+-        android:summary="%s" />
+-
+-    <Preference
+-        android:key="preview_device"
+-        style="?android:preferenceInformationStyle"
+-        android:title="@string/preview_device_title"
+-        android:summary="%s" />
+-
+-    <Preference
+-        android:key="preview_version"
+-        style="?android:preferenceInformationStyle"
+-        android:title="@string/preview_version_title"
+-        android:summary="%s" />
+-
+-    <Preference
+-        android:key="preview_country"
+-        style="?android:preferenceInformationStyle"
+-        android:title="@string/preview_country_title"
+-        android:summary="%s" />
+-
+-    <Preference
+-        android:key="preview_carrier"
+-        style="?android:preferenceInformationStyle"
+-        android:title="@string/preview_carrier_title"
+-        android:summary="%s" />
+-
+-</PreferenceScreen>
+-
+diff --git a/res/xml/trust_preferences.xml b/res/xml/trust_preferences.xml
+index 021533b..5767cf4 100644
+--- a/res/xml/trust_preferences.xml
++++ b/res/xml/trust_preferences.xml
+@@ -36,9 +36,6 @@
+             android:entryValues="@array/trust_restrict_usb_values"
+             android:defaultValue="0" />
+ 
+-        <lineageos.preference.LineagePartsPreference
+-            android:key="lineagestats" />
+-
+         <ListPreference
+             android:key="sms_security_check_limit"
+             android:defaultValue="30"
+diff --git a/src/org/lineageos/lineageparts/lineagestats/AnonymousStats.java b/src/org/lineageos/lineageparts/lineagestats/AnonymousStats.java
+deleted file mode 100644
+index f120718..0000000
+--- a/src/org/lineageos/lineageparts/lineagestats/AnonymousStats.java
++++ /dev/null
+@@ -1,63 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: 2015 The CyanogenMod Project
+- * SPDX-FileCopyrightText: 2022 The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.lineageparts.lineagestats;
+-
+-import android.content.Context;
+-import android.content.SharedPreferences;
+-import android.os.Bundle;
+-
+-import org.lineageos.lineageparts.R;
+-import org.lineageos.lineageparts.SettingsPreferenceFragment;
+-
+-public class AnonymousStats extends SettingsPreferenceFragment {
+-
+-    private static final String PREF_FILE_NAME = "LineageStats";
+-    static final String ANONYMOUS_OPT_IN = "pref_anonymous_opt_in";
+-    static final String ANONYMOUS_LAST_CHECKED = "pref_anonymous_checked_in";
+-
+-    static final String KEY_LAST_JOB_ID = "last_job_id";
+-    static final int QUEUE_MAX_THRESHOLD = 1000;
+-
+-    public static SharedPreferences getPreferences(Context context) {
+-        return context.getSharedPreferences(PREF_FILE_NAME, 0);
+-    }
+-
+-    @Override
+-    public void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        addPreferencesFromResource(R.xml.anonymous_stats);
+-    }
+-
+-    public static void updateLastSynced(Context context) {
+-        getPreferences(context)
+-                .edit()
+-                .putLong(ANONYMOUS_LAST_CHECKED,System.currentTimeMillis())
+-                .commit();
+-    }
+-
+-    public static int getLastJobId(Context context) {
+-        return getPreferences(context).getInt(KEY_LAST_JOB_ID, 0);
+-    }
+-
+-    private static void setLastJobId(Context context, int id) {
+-        getPreferences(context)
+-                .edit()
+-                .putInt(KEY_LAST_JOB_ID, id)
+-                .commit();
+-    }
+-
+-    public static int getNextJobId(Context context) {
+-        int lastId = getLastJobId(context);
+-        if (lastId >= QUEUE_MAX_THRESHOLD) {
+-            lastId = 1;
+-        } else {
+-            lastId += 1;
+-        }
+-        setLastJobId(context, lastId);
+-        return lastId;
+-    }
+-}
+diff --git a/src/org/lineageos/lineageparts/lineagestats/PreviewData.java b/src/org/lineageos/lineageparts/lineagestats/PreviewData.java
+deleted file mode 100644
+index 32e4413..0000000
+--- a/src/org/lineageos/lineageparts/lineagestats/PreviewData.java
++++ /dev/null
+@@ -1,39 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: 2012 The CyanogenMod Project
+- * SPDX-FileCopyrightText: 2017-2023 The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.lineageparts.lineagestats;
+-
+-import android.content.Context;
+-import android.os.Bundle;
+-
+-import androidx.preference.PreferenceScreen;
+-
+-import org.lineageos.lineageparts.R;
+-import org.lineageos.lineageparts.SettingsPreferenceFragment;
+-
+-public class PreviewData extends SettingsPreferenceFragment {
+-    private static final String UNIQUE_ID = "preview_id";
+-    private static final String DEVICE = "preview_device";
+-    private static final String VERSION = "preview_version";
+-    private static final String COUNTRY = "preview_country";
+-    private static final String CARRIER = "preview_carrier";
+-
+-    @Override
+-    public void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-
+-        addPreferencesFromResource(R.xml.preview_data);
+-
+-        final PreferenceScreen prefSet = getPreferenceScreen();
+-        final Context context = requireActivity();
+-
+-        prefSet.findPreference(UNIQUE_ID).setSummary(Utilities.getUniqueID(context));
+-        prefSet.findPreference(DEVICE).setSummary(Utilities.getDevice());
+-        prefSet.findPreference(VERSION).setSummary(Utilities.getModVersion());
+-        prefSet.findPreference(COUNTRY).setSummary(Utilities.getCountryCode(context));
+-        prefSet.findPreference(CARRIER).setSummary(Utilities.getCarrier(context));
+-    }
+-}
+diff --git a/src/org/lineageos/lineageparts/lineagestats/ReportingService.java b/src/org/lineageos/lineageparts/lineagestats/ReportingService.java
+deleted file mode 100644
+index 7455b50..0000000
+--- a/src/org/lineageos/lineageparts/lineagestats/ReportingService.java
++++ /dev/null
+@@ -1,73 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: 2015 The CyanogenMod Project
+- * SPDX-FileCopyrightText: 2017-2022 The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.lineageparts.lineagestats;
+-
+-import android.app.IntentService;
+-import android.app.job.JobInfo;
+-import android.app.job.JobScheduler;
+-import android.content.ComponentName;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.os.PersistableBundle;
+-import android.util.Log;
+-
+-public class ReportingService extends IntentService {
+-    /* package */ static final String TAG = "LineageStats";
+-    private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
+-
+-    public ReportingService() {
+-        super(ReportingService.class.getSimpleName());
+-    }
+-
+-    @Override
+-    protected void onHandleIntent(Intent intent) {
+-        JobScheduler js = getSystemService(JobScheduler.class);
+-
+-        Context context = getApplicationContext();
+-
+-        String deviceId = Utilities.getUniqueID(context);
+-        String deviceName = Utilities.getDevice();
+-        String deviceVersion = Utilities.getModVersion();
+-        String deviceCountry = Utilities.getCountryCode(context);
+-        String deviceCarrier = Utilities.getCarrier(context);
+-        String deviceCarrierId = Utilities.getCarrierId(context);
+-
+-        final int lineageOldJobId = AnonymousStats.getLastJobId(context);
+-        final int lineageOrgJobId = AnonymousStats.getNextJobId(context);
+-
+-        if (DEBUG) Log.d(TAG, "scheduling job id: " + lineageOrgJobId);
+-
+-        PersistableBundle lineageBundle = new PersistableBundle();
+-        lineageBundle.putString(StatsUploadJobService.KEY_DEVICE_NAME, deviceName);
+-        lineageBundle.putString(StatsUploadJobService.KEY_UNIQUE_ID, deviceId);
+-        lineageBundle.putString(StatsUploadJobService.KEY_VERSION, deviceVersion);
+-        lineageBundle.putString(StatsUploadJobService.KEY_COUNTRY, deviceCountry);
+-        lineageBundle.putString(StatsUploadJobService.KEY_CARRIER, deviceCarrier);
+-        lineageBundle.putString(StatsUploadJobService.KEY_CARRIER_ID, deviceCarrierId);
+-        lineageBundle.putLong(StatsUploadJobService.KEY_TIMESTAMP, System.currentTimeMillis());
+-
+-        // set job types
+-        lineageBundle.putInt(StatsUploadJobService.KEY_JOB_TYPE,
+-                StatsUploadJobService.JOB_TYPE_LINEAGEORG);
+-
+-        // schedule lineage stats upload
+-        js.schedule(new JobInfo.Builder(lineageOrgJobId, new ComponentName(getPackageName(),
+-                StatsUploadJobService.class.getName()))
+-                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+-                .setMinimumLatency(1000)
+-                .setExtras(lineageBundle)
+-                .setPersisted(true)
+-                .build());
+-
+-        // cancel old job in case it didn't run yet
+-        js.cancel(lineageOldJobId);
+-
+-        // reschedule
+-        AnonymousStats.updateLastSynced(this);
+-        ReportingServiceManager.setAlarm(this);
+-    }
+-}
+diff --git a/src/org/lineageos/lineageparts/lineagestats/ReportingServiceManager.java b/src/org/lineageos/lineageparts/lineagestats/ReportingServiceManager.java
+deleted file mode 100644
+index 5698953..0000000
+--- a/src/org/lineageos/lineageparts/lineagestats/ReportingServiceManager.java
++++ /dev/null
+@@ -1,96 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: 2012 The CyanogenMod Project
+- * SPDX-FileCopyrightText: 2017-2023 The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.lineageparts.lineagestats;
+-
+-import android.app.AlarmManager;
+-import android.app.PendingIntent;
+-import android.content.BroadcastReceiver;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.content.SharedPreferences;
+-import android.os.UserHandle;
+-import android.util.Log;
+-
+-public class ReportingServiceManager extends BroadcastReceiver {
+-    private static final long MILLIS_PER_HOUR = 60L * 60L * 1000L;
+-    private static final long MILLIS_PER_DAY = 24L * MILLIS_PER_HOUR;
+-    private static final long UPDATE_INTERVAL = 1L * MILLIS_PER_DAY;
+-
+-    private static final String TAG = ReportingServiceManager.class.getSimpleName();
+-
+-    public static final String ACTION_LAUNCH_SERVICE =
+-            "org.lineageos.lineageparts.action.TRIGGER_REPORT_METRICS";
+-    public static final String EXTRA_FORCE = "force";
+-
+-    @Override
+-    public void onReceive(Context context, Intent intent) {
+-        if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) {
+-            setAlarm(context);
+-        } else if (intent.getAction().equals(ACTION_LAUNCH_SERVICE)){
+-            launchService(context, intent.getBooleanExtra(EXTRA_FORCE, false));
+-        }
+-    }
+-
+-    public static void setAlarm(Context context) {
+-        SharedPreferences prefs = AnonymousStats.getPreferences(context);
+-        if (prefs.contains(AnonymousStats.ANONYMOUS_OPT_IN)) {
+-            migrate(context, prefs);
+-        }
+-        if (!Utilities.isStatsCollectionEnabled(context)) {
+-            return;
+-        }
+-        long lastSynced = prefs.getLong(AnonymousStats.ANONYMOUS_LAST_CHECKED, 0);
+-        if (lastSynced == 0) {
+-            launchService(context, true); // service will reschedule the next alarm
+-            return;
+-        }
+-        long millisFromNow = (lastSynced + UPDATE_INTERVAL) - System.currentTimeMillis();
+-
+-        Intent intent = new Intent(ACTION_LAUNCH_SERVICE);
+-        intent.setClass(context, ReportingServiceManager.class);
+-
+-        AlarmManager alarmManager = context.getSystemService(AlarmManager.class);
+-        alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + millisFromNow,
+-                PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE));
+-        Log.d(TAG, "Next sync attempt in : "
+-                + (millisFromNow / MILLIS_PER_HOUR) + " hours");
+-    }
+-
+-    public static void launchService(Context context, boolean force) {
+-        SharedPreferences prefs = AnonymousStats.getPreferences(context);
+-
+-        if (!Utilities.isStatsCollectionEnabled(context)) {
+-            return;
+-        }
+-
+-        if (!force) {
+-            long lastSynced = prefs.getLong(AnonymousStats.ANONYMOUS_LAST_CHECKED, 0);
+-            if (lastSynced == 0) {
+-                setAlarm(context);
+-                return;
+-            }
+-            long timeElapsed = System.currentTimeMillis() - lastSynced;
+-            if (timeElapsed < UPDATE_INTERVAL) {
+-                long timeLeft = UPDATE_INTERVAL - timeElapsed;
+-                Log.d(TAG, "Waiting for next sync : "
+-                        + timeLeft / MILLIS_PER_HOUR + " hours");
+-                return;
+-            }
+-        }
+-
+-        Intent intent = new Intent();
+-        intent.setClass(context, ReportingService.class);
+-        context.startServiceAsUser(intent, UserHandle.SYSTEM);
+-    }
+-
+-    private static void migrate(Context context, SharedPreferences prefs) {
+-        Utilities.setStatsCollectionEnabled(context,
+-                prefs.getBoolean(AnonymousStats.ANONYMOUS_OPT_IN, true));
+-        prefs.edit().remove(AnonymousStats.ANONYMOUS_OPT_IN).commit();
+-    }
+-
+-}
+diff --git a/src/org/lineageos/lineageparts/lineagestats/StatsUploadJobService.java b/src/org/lineageos/lineageparts/lineagestats/StatsUploadJobService.java
+deleted file mode 100644
+index e19c2e5..0000000
+--- a/src/org/lineageos/lineageparts/lineagestats/StatsUploadJobService.java
++++ /dev/null
+@@ -1,200 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: 2015 The CyanogenMod Project
+- * SPDX-FileCopyrightText: 2017-2023 The LineageOS project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.lineageparts.lineagestats;
+-
+-import android.app.job.JobParameters;
+-import android.app.job.JobService;
+-import android.net.Uri;
+-import android.os.Handler;
+-import android.os.Looper;
+-import android.os.PersistableBundle;
+-import android.util.ArrayMap;
+-import android.util.Log;
+-import org.lineageos.lineageparts.R;
+-import org.json.JSONException;
+-import org.json.JSONObject;
+-
+-import java.io.BufferedInputStream;
+-import java.io.BufferedReader;
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.io.InputStreamReader;
+-import java.io.OutputStream;
+-import java.net.HttpURLConnection;
+-import java.net.URL;
+-import java.nio.charset.StandardCharsets;
+-import java.util.Collections;
+-import java.util.Map;
+-import java.util.concurrent.ExecutorService;
+-import java.util.concurrent.Executors;
+-
+-public class StatsUploadJobService extends JobService {
+-
+-    private static final String TAG = StatsUploadJobService.class.getSimpleName();
+-    private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
+-
+-    public static final String KEY_JOB_TYPE = "job_type";
+-    public static final int JOB_TYPE_LINEAGEORG = 1;
+-
+-    public static final String KEY_UNIQUE_ID = "uniqueId";
+-    public static final String KEY_DEVICE_NAME = "deviceName";
+-    public static final String KEY_VERSION = "version";
+-    public static final String KEY_COUNTRY = "country";
+-    public static final String KEY_CARRIER = "carrier";
+-    public static final String KEY_CARRIER_ID = "carrierId";
+-    public static final String KEY_TIMESTAMP = "timeStamp";
+-
+-    private final Map<JobParameters, StatsUploadTask> mCurrentJobs
+-            = Collections.synchronizedMap(new ArrayMap<>());
+-
+-    @Override
+-    public boolean onStartJob(JobParameters jobParameters) {
+-        if (DEBUG)
+-            Log.d(TAG, "onStartJob() called with " + "jobParameters = [" + jobParameters + "]");
+-
+-        if (!Utilities.isStatsCollectionEnabled(this)) {
+-            return false;
+-        }
+-
+-        final StatsUploadTask uploadTask = new StatsUploadTask(jobParameters);
+-        mCurrentJobs.put(jobParameters, uploadTask);
+-        uploadTask.execute();
+-        return true;
+-    }
+-
+-    @Override
+-    public boolean onStopJob(JobParameters jobParameters) {
+-        if (DEBUG)
+-            Log.d(TAG, "onStopJob() called with " + "jobParameters = [" + jobParameters + "]");
+-
+-        final StatsUploadTask cancelledJob;
+-        cancelledJob = mCurrentJobs.remove(jobParameters);
+-
+-        if (cancelledJob != null) {
+-            // cancel the ongoing background task
+-            cancelledJob.cancel();
+-            return true; // reschedule
+-        }
+-
+-        return false;
+-    }
+-
+-    private class StatsUploadTask {
+-
+-        private final JobParameters mJobParams;
+-        private boolean mCancelled;
+-
+-        public StatsUploadTask(JobParameters jobParams) {
+-            this.mJobParams = jobParams;
+-        }
+-
+-        public void execute() {
+-            ExecutorService executor = Executors.newSingleThreadExecutor();
+-            Handler handler = new Handler(Looper.getMainLooper());
+-            executor.execute(() -> {
+-                PersistableBundle extras = mJobParams.getExtras();
+-
+-                String deviceId = extras.getString(KEY_UNIQUE_ID);
+-                String deviceName = extras.getString(KEY_DEVICE_NAME);
+-                String deviceVersion = extras.getString(KEY_VERSION);
+-                String deviceCountry = extras.getString(KEY_COUNTRY);
+-                String deviceCarrier = extras.getString(KEY_CARRIER);
+-                String deviceCarrierId = extras.getString(KEY_CARRIER_ID);
+-
+-                boolean success = false;
+-                int jobType = extras.getInt(KEY_JOB_TYPE, -1);
+-                if (!mCancelled) {
+-                    switch (jobType) {
+-                        case JOB_TYPE_LINEAGEORG:
+-                            try {
+-                                JSONObject json = buildStatsRequest(deviceId, deviceName,
+-                                        deviceVersion, deviceCountry, deviceCarrier,
+-                                        deviceCarrierId);
+-                                success = uploadToLineage(json);
+-                            } catch (IOException | JSONException e) {
+-                                Log.e(TAG, "Could not upload stats checkin to community server", e);
+-                            }
+-                            break;
+-                    }
+-                }
+-                if (DEBUG)
+-                    Log.d(TAG, "job id " + mJobParams.getJobId() + ", has finished with success="
+-                            + success);
+-
+-                if (!mCancelled) {
+-                    final boolean finalResult = success;
+-                    handler.post(() -> {
+-                        mCurrentJobs.remove(mJobParams);
+-                        jobFinished(mJobParams, !finalResult);
+-                    });
+-                }
+-            });
+-        }
+-
+-        public void cancel() {
+-            mCancelled = true;
+-        }
+-    }
+-
+-    private JSONObject buildStatsRequest(String deviceId, String deviceName, String deviceVersion,
+-                                         String deviceCountry, String deviceCarrier,
+-                                         String deviceCarrierId) throws JSONException {
+-        JSONObject request = new JSONObject();
+-        request.put("device_hash", deviceId);
+-        request.put("device_name", deviceName);
+-        request.put("device_version", deviceVersion);
+-        request.put("device_country", deviceCountry);
+-        request.put("device_carrier", deviceCarrier);
+-        request.put("device_carrier_id", deviceCarrierId);
+-        return request;
+-    }
+-
+-    private boolean uploadToLineage(JSONObject json) throws IOException {
+-        final Uri uri = Uri.parse(getString(R.string.stats_lineage_url));
+-        URL url = new URL(uri.toString());
+-        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+-        try {
+-            urlConnection.setInstanceFollowRedirects(true);
+-            urlConnection.setDoOutput(true);
+-            urlConnection.setDoInput(true);
+-            urlConnection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+-
+-            OutputStream os = urlConnection.getOutputStream();
+-            os.write(json.toString().getBytes(StandardCharsets.UTF_8));
+-            os.close();
+-
+-            final int responseCode = urlConnection.getResponseCode();
+-            if (DEBUG) Log.d(TAG, "lineage server response code=" + responseCode);
+-            final boolean success = responseCode == HttpURLConnection.HTTP_OK;
+-            if (!success) {
+-                Log.w(TAG, "failed sending, server returned: " + getResponse(urlConnection));
+-            }
+-            return success;
+-        } finally {
+-            urlConnection.disconnect();
+-        }
+-
+-    }
+-
+-    private String getResponse(HttpURLConnection httpUrlConnection)
+-            throws IOException {
+-        InputStream responseStream = new BufferedInputStream(httpUrlConnection.getErrorStream());
+-
+-        BufferedReader responseStreamReader = new BufferedReader(
+-                new InputStreamReader(responseStream));
+-        String line = "";
+-        StringBuilder stringBuilder = new StringBuilder();
+-        while ((line = responseStreamReader.readLine()) != null) {
+-            stringBuilder.append(line).append("\n");
+-        }
+-        responseStreamReader.close();
+-        responseStream.close();
+-
+-        return stringBuilder.toString();
+-    }
+-
+-}
+diff --git a/src/org/lineageos/lineageparts/lineagestats/Utilities.java b/src/org/lineageos/lineageparts/lineagestats/Utilities.java
+deleted file mode 100644
+index ce155c6..0000000
+--- a/src/org/lineageos/lineageparts/lineagestats/Utilities.java
++++ /dev/null
+@@ -1,105 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: 2012 The CyanogenMod Project
+- * SPDX-FileCopyrightText: 2021-2022 The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.lineageparts.lineagestats;
+-
+-import android.content.Context;
+-import android.os.Build;
+-import android.os.SystemProperties;
+-import android.provider.Settings;
+-import android.telephony.TelephonyManager;
+-import android.text.TextUtils;
+-
+-import lineageos.providers.LineageSettings;
+-
+-import java.math.BigInteger;
+-import java.security.MessageDigest;
+-import java.util.Locale;
+-
+-public class Utilities {
+-    public static String getUniqueID(Context context) {
+-        final String id = Settings.Secure.getString(context.getContentResolver(),
+-                Settings.Secure.ANDROID_ID);
+-        return digest(context.getPackageName() + id);
+-    }
+-
+-    public static String getCarrier(Context context) {
+-        TelephonyManager tm = context.getSystemService(TelephonyManager.class);
+-        String carrier = tm.getNetworkOperatorName();
+-        if (TextUtils.isEmpty(carrier)) {
+-            String simOperator = tm.getSimOperatorName();
+-            if (!TextUtils.isEmpty(simOperator)) {
+-                carrier = simOperator;
+-            } else {
+-                carrier = "Unknown";
+-            }
+-        }
+-        return carrier;
+-    }
+-
+-    public static String getCarrierId(Context context) {
+-        TelephonyManager tm = context.getSystemService(TelephonyManager.class);
+-        String carrierId = tm.getNetworkOperator();
+-        if (TextUtils.isEmpty(carrierId)) {
+-            carrierId = "0";
+-        }
+-        return carrierId;
+-    }
+-
+-    public static String getCountryCode(Context context) {
+-        TelephonyManager tm = context.getSystemService(TelephonyManager.class);
+-        String countryCode = tm.getNetworkCountryIso().toUpperCase();
+-        if (TextUtils.isEmpty(countryCode) || isCdmaPhone(tm)) {
+-            String localeCountryCode = Locale.getDefault().getCountry();
+-            if (localeCountryCode.length() == 2) {
+-                countryCode = localeCountryCode;
+-            } else {
+-                countryCode = "Unknown";
+-            }
+-        }
+-        return countryCode;
+-    }
+-
+-    public static String getDevice() {
+-        return SystemProperties.get("ro.lineage.device", Build.PRODUCT);
+-    }
+-
+-    public static String getModVersion() {
+-        return SystemProperties.get("ro.lineage.version", Build.DISPLAY);
+-    }
+-
+-    public static String digest(String input) {
+-        try {
+-            MessageDigest md = MessageDigest.getInstance("SHA-256");
+-            return new BigInteger(1, md.digest(input.getBytes())).toString(16).toUpperCase();
+-        } catch (Exception e) {
+-            return null;
+-        }
+-    }
+-
+-    /**
+-     * Check to see if global stats are enabled.
+-     * @return Whether or not stats collection is enabled.
+-     */
+-    public static boolean isStatsCollectionEnabled(Context context) {
+-        return LineageSettings.Secure.getInt(context.getContentResolver(),
+-                LineageSettings.Secure.STATS_COLLECTION, 1) != 0;
+-    }
+-
+-    /**
+-     * Enabled or disable stats collection
+-     * @param enabled Boolean that sets collection being enabled.
+-     */
+-    public static void setStatsCollectionEnabled(Context context, boolean enabled) {
+-        int enable = (enabled) ? 1 : 0;
+-        LineageSettings.Secure.putInt(context.getContentResolver(),
+-                LineageSettings.Secure.STATS_COLLECTION, enable);
+-    }
+-
+-    private static boolean isCdmaPhone(TelephonyManager tm) {
+-        return tm != null && tm.getPhoneType() == TelephonyManager.PHONE_TYPE_CDMA;
+-    }
+-}

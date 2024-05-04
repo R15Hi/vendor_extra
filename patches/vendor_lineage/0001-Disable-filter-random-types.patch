@@ -1,0 +1,26 @@
+From ff6fbf64e86b7698e88da8f167d64fd218b53687 Mon Sep 17 00:00:00 2001
+From: flame-0 <fl4m3@pm.me>
+Date: Wed, 1 May 2024 20:14:37 +0800
+Subject: [PATCH] config: disable filter random types
+
+---
+ config/version.mk | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/config/version.mk b/config/version.mk
+index 9fb74174..0083fb52 100644
+--- a/config/version.mk
++++ b/config/version.mk
+@@ -17,12 +17,6 @@ ifndef LINEAGE_BUILDTYPE
+     endif
+ endif
+ 
+-# Filter out random types, so it'll reset to UNOFFICIAL
+-ifeq ($(filter RELEASE NIGHTLY SNAPSHOT EXPERIMENTAL,$(LINEAGE_BUILDTYPE)),)
+-    LINEAGE_BUILDTYPE := UNOFFICIAL
+-    LINEAGE_EXTRAVERSION :=
+-endif
+-
+ ifeq ($(LINEAGE_BUILDTYPE), UNOFFICIAL)
+     ifneq ($(TARGET_UNOFFICIAL_BUILD_ID),)
+         LINEAGE_EXTRAVERSION := -$(TARGET_UNOFFICIAL_BUILD_ID)
