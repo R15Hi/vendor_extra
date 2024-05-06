@@ -93,14 +93,14 @@ base: Add metric for Lineage Settings
  .../NotificationManagerInternal.java          |    3 +
  .../NotificationManagerService.java           |   53 +-
  .../notification/NotificationRecord.java      |   10 +
- .../NotificationRecordExtractorData.java      |   10 +-
+ .../NotificationRecordExtractorData.java      |   11 +-
  .../server/pm/LauncherAppsService.java        |    9 +
  .../server/trust/TrustManagerService.java     |   12 +
  .../server/wm/ActivityStartInterceptor.java   |   49 +
  .../wm/ActivityTaskManagerInternal.java       |    2 +
  .../server/wm/ActivityTaskManagerService.java |   27 +
  .../java/com/android/server/SystemServer.java |    7 +
- 39 files changed, 2616 insertions(+), 26 deletions(-)
+ 39 files changed, 2616 insertions(+), 27 deletions(-)
  create mode 100644 core/java/android/app/AppLockData.aidl
  create mode 100644 core/java/android/app/AppLockData.java
  create mode 100644 core/java/android/app/AppLockManager.java
@@ -1515,7 +1515,7 @@ index 000000000000..e32d0160464f
 +}
 diff --git a/services/applock/java/com/android/server/app/AppLockManagerService.kt b/services/applock/java/com/android/server/app/AppLockManagerService.kt
 new file mode 100644
-index 000000000000..8a602d071b90
+index 000000000000..6fb6cef42fcd
 --- /dev/null
 +++ b/services/applock/java/com/android/server/app/AppLockManagerService.kt
 @@ -0,0 +1,1181 @@
@@ -3136,7 +3136,7 @@ index 4aa2b0e10568..88aa038c7341 100644
      static final class Light {
          public final int color;
 diff --git a/services/core/java/com/android/server/notification/NotificationRecordExtractorData.java b/services/core/java/com/android/server/notification/NotificationRecordExtractorData.java
-index 3f4f7d3bbc38..6d0b15cec60d 100644
+index 3f4f7d3bbc38..3e883e7df0e7 100644
 --- a/services/core/java/com/android/server/notification/NotificationRecordExtractorData.java
 +++ b/services/core/java/com/android/server/notification/NotificationRecordExtractorData.java
 @@ -41,6 +41,7 @@ public final class NotificationRecordExtractorData {
@@ -3147,16 +3147,17 @@ index 3f4f7d3bbc38..6d0b15cec60d 100644
  
      // These fields may not trigger a reranking but diffs here may be logged.
      private final float mRankingScore;
-@@ -55,6 +56,8 @@ public final class NotificationRecordExtractorData {
+@@ -54,7 +55,8 @@ public final class NotificationRecordExtractorData {
+             Integer userSentiment, Integer suppressVisually,
              ArrayList<Notification.Action> systemSmartActions,
              ArrayList<CharSequence> smartReplies, int importance, float rankingScore,
-             boolean isConversation, int proposedImportance, boolean sensitiveContent) {
+-            boolean isConversation, int proposedImportance, boolean sensitiveContent) {
 +            boolean isConversation, int proposedImportance, boolean sensitiveContent,
 +            boolean isBubbleUpSuppressedByAppLock) {
          mPosition = position;
          mVisibility = visibility;
          mShowBadge = showBadge;
-@@ -73,6 +76,7 @@ public final class NotificationRecordExtractorData {
+@@ -73,6 +75,7 @@ public final class NotificationRecordExtractorData {
          mIsConversation = isConversation;
          mProposedImportance = proposedImportance;
          mSensitiveContent = sensitiveContent;
@@ -3164,7 +3165,7 @@ index 3f4f7d3bbc38..6d0b15cec60d 100644
      }
  
      // Returns whether the provided NotificationRecord differs from the cached data in any way.
-@@ -93,7 +97,8 @@ public final class NotificationRecordExtractorData {
+@@ -93,7 +96,8 @@ public final class NotificationRecordExtractorData {
                  || !Objects.equals(mSmartReplies, r.getSmartReplies())
                  || mImportance != r.getImportance()
                  || mProposedImportance != r.getProposedImportance()
@@ -3174,7 +3175,7 @@ index 3f4f7d3bbc38..6d0b15cec60d 100644
      }
  
      // Returns whether the NotificationRecord has a change from this data for which we should
-@@ -117,6 +122,7 @@ public final class NotificationRecordExtractorData {
+@@ -117,6 +121,7 @@ public final class NotificationRecordExtractorData {
                  || !r.rankingScoreMatches(mRankingScore)
                  || mIsConversation != r.isConversation()
                  || mProposedImportance != r.getProposedImportance()
