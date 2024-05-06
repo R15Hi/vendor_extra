@@ -2016,7 +2016,7 @@ index 000000000000..8a602d071b90
 +                userId
 +            )
 +            if (!aInfo.isSystemApp()) return
-+            if (Utils.launchablePackages(context).contains(pkg)) return
++            if (AppLockUtils.launchablePackages(context).contains(pkg)) return
 +            if (!whiteListedSystemApps.contains(pkg))
 +                throw IllegalArgumentException("System package $pkg is not whitelisted")
 +        } catch(e: PackageManager.NameNotFoundException) {
