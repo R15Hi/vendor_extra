@@ -1,7 +1,7 @@
-From ff6fbf64e86b7698e88da8f167d64fd218b53687 Mon Sep 17 00:00:00 2001
+From d0dd65efc5d0dd22c6f2b9ba2798e645754160ea Mon Sep 17 00:00:00 2001
 From: flame-0 <fl4m3@pm.me>
 Date: Wed, 1 May 2024 20:14:37 +0800
-Subject: [PATCH] config: disable filter random types
+Subject: [PATCH 1/2] config: disable filter random types
 
 ---
  config/version.mk | 6 ------

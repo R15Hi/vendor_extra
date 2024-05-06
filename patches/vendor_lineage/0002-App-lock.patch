@@ -1,0 +1,32 @@
+From c5c4fbd949d9c80e606afc5e99f3d0c5f9e460cf Mon Sep 17 00:00:00 2001
+From: flame-0 <fl4m3@pm.me>
+Date: Mon, 6 May 2024 13:46:11 +0800
+Subject: [PATCH 2/2] overlay: Add system app whitelist for applock
+
+---
+ .../frameworks/base/core/res/res/values/config.xml | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/overlay/common/frameworks/base/core/res/res/values/config.xml b/overlay/common/frameworks/base/core/res/res/values/config.xml
+index b1e1612b..d8920eb4 100644
+--- a/overlay/common/frameworks/base/core/res/res/values/config.xml
++++ b/overlay/common/frameworks/base/core/res/res/values/config.xml
+@@ -174,4 +174,18 @@
+ 
+     <!-- Name of the font family to use in the default lockscreen clock -->
+     <string name="config_clockFontFamily" translatable="false" />
++
++    <!-- List of system apps that are allowed to be locked with app lock.
++         Use with extreme caution. -->
++    <string-array name="config_appLockAllowedSystemApps" translatable="false">
++        <item>com.android.contacts</item>
++        <item>com.android.deskclock</item>
++        <item>com.android.dialer</item>
++        <item>com.android.documentsui</item>
++        <item>com.android.settings</item>
++        <item>com.android.vending</item>
++        <item>com.google.android.gms</item>
++        <item>com.google.android.inputmethod.latin</item>
++        <item>org.lineageos.aperture</item>
++    </string-array>
+ </resources>
