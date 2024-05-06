@@ -1,7 +1,7 @@
-From 31de7438ddb65f66652ad5c3cec1c11223a6442b Mon Sep 17 00:00:00 2001
+From bab8424c53268ecc1f4e49b73762c2dc7064c652 Mon Sep 17 00:00:00 2001
 From: flame-0 <fl4m3@pm.me>
-Date: Mon, 6 May 2024 13:30:25 +0800
-Subject: [PATCH 2/2] Settings: Introduce App Lock [SQUASHED]
+Date: Tue, 7 May 2024 01:38:47 +0800
+Subject: [PATCH 2/2] Settings: Introduce app lock
 
 Squashed:
 
@@ -88,9 +88,13 @@ Settings: fix app lock allow biometric toggle ignored (always on)
 Change-Id: I010858491a3fb53dfd98b354670752d4071791cb
 Fixes: https://github.com/crdroidandroid/issue_tracker/issues/172
 Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
+
+Settings: Add strings for App Lock settings
 ---
  Android.bp                                    |   6 +
  AndroidManifest.xml                           |  24 ++
+ res/values/arrays.xml                         |  21 ++
+ res/values/strings.xml                        |  22 ++
  res/xml/app_lock_package_config_settings.xml  |  45 ++++
  res/xml/app_lock_package_list_settings.xml    |  19 ++
  res/xml/app_lock_settings.xml                 |  44 ++++
@@ -111,7 +115,7 @@ Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
  .../security/applock/AppLockSubSettings.kt    |  26 +++
  .../AppLockTimeoutPreferenceController.kt     |  47 ++++
  .../AppLockTogglePreferenceController.kt      |  49 +++++
- 22 files changed, 1222 insertions(+)
+ 24 files changed, 1265 insertions(+)
  create mode 100644 res/xml/app_lock_package_config_settings.xml
  create mode 100644 res/xml/app_lock_package_list_settings.xml
  create mode 100644 res/xml/app_lock_settings.xml
@@ -187,6 +191,67 @@ index deb24592737..79f96c3b340 100644
          <!-- This is the longest AndroidManifest.xml ever. -->
      </application>
  </manifest>
+diff --git a/res/values/arrays.xml b/res/values/arrays.xml
+index 1ca428bc8c3..360b07364ed 100644
+--- a/res/values/arrays.xml
++++ b/res/values/arrays.xml
+@@ -1490,4 +1490,25 @@
+         <item>2</item>
+     </string-array>
+ 
++    <!-- App lock timeout -->
++    <string-array name="app_lock_timeout_entries">
++        <item>5 seconds</item>
++        <item>10 seconds</item>
++        <item>30 seconds</item>
++        <item>1 minute</item>
++        <item>5 minutes</item>
++        <item>10 minutes</item>
++        <item>30 minutes</item>
++    </string-array>
++
++    <string-array name="app_lock_timeout_values" translatable="false">
++        <item>5000</item>
++        <item>10000</item>
++        <item>30000</item>
++        <item>60000</item>
++        <item>300000</item>
++        <item>600000</item>
++        <item>1800000</item>
++    </string-array>
++
+ </resources>
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 8fcbcbf6b49..a88c44bcb42 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -12633,4 +12633,26 @@
+     <string name="content_protection_preference_subpage_summary"></string>
+     <!-- Default information at the bottom of the subpage of content protection settings. Will be overlaid by OEM. -->
+     <string name="content_protection_preference_subpage_info"></string>
++
++    <!-- App lock -->
++    <string name="app_lock_title">App lock</string>
++    <plurals name="app_lock_summary">
++        <item quantity="one"><xliff:g example="1" id="Number of applications">%1$d</xliff:g> application is protected</item>
++        <item quantity="other"><xliff:g example="10" id="Number of applications">%1$d</xliff:g> applications are protected</item>
++    </plurals>
++    <string name="app_lock_authentication_dialog_title">Unlock</string>
++    <string name="enable_debugging">Enable debugging</string>
++    <string name="disable_debugging">Disable debugging</string>
++    <string name="app_lock_packages_title">Protected apps</string>
++    <string name="app_lock_packages_summary">Select the apps to protect with biometrics or device credentials</string>
++    <string name="app_lock_timeout_title">Auto lock timeout</string>
++    <string name="app_lock_timeout_summary">Duration of time after which an unlocked app in background should be locked</string>
++    <string name="app_lock_notifications_title">Redact notifications</string>
++    <string name="app_lock_notifications_summary">Notification content will be hidden and collapsed for selected apps when they are locked. Heads up notifications will be automatically disabled.</string>
++    <string name="app_lock_notifications_disabled_summary">Protect an application first</string>
++    <string name="app_lock_biometrics_allowed_title">Enable biometrics for unlocking</string>
++    <string name="app_lock_footer_text">Bubbles will be automatically dismissed after timeout</string>
++    <string name="enable_protection">Enable protection</string>
++    <string name="hide_from_launcher_title">Hide from launcher</string>
++    <string name="hide_from_launcher_summary">Prevent this application from showing up in any launcher. Requires a launcher restart for changes to take effect.</string>
+ </resources>
 diff --git a/res/xml/app_lock_package_config_settings.xml b/res/xml/app_lock_package_config_settings.xml
 new file mode 100644
 index 00000000000..42d2368a3b7

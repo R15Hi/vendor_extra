@@ -1,6 +1,6 @@
-From 016f715bbc547af80482922e82d78bf9c98d45f1 Mon Sep 17 00:00:00 2001
+From ca441a7a75872c6cc207a2d886e199342d7cdfd1 Mon Sep 17 00:00:00 2001
 From: flame-0 <fl4m3@pm.me>
-Date: Mon, 6 May 2024 03:39:17 +0800
+Date: Tue, 7 May 2024 00:21:48 +0800
 Subject: [PATCH 4/4] base: Introduce app lock [SQUASHED]
 
 base: applock: refactor
@@ -26,8 +26,6 @@ services: AppLockManagerService: use the og calling uid for target intent
 * nift4: avoid changing public api
 
 * @neobuddy89: Add privapp permissions for Settings, updated for A14
-
-* Dhina17: applock: Handle null-safety errors for U QPR2
 
 Change-Id: Ie35c6c7103b8bed644d510d8268d6c99cb71a1a2
 Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
@@ -59,7 +57,7 @@ It causes conflict with Bluetooth system service
 Change-Id: Iaa13ce9ad252ac27ea7ca3133148ef572c5f71e7
 Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
 
-base: Add metric for Lineage Settings
+base: Add metric for LineageOS Settings
 ---
  core/java/android/app/AppLockData.aidl        |   19 +
  core/java/android/app/AppLockData.java        |  109 ++
@@ -71,14 +69,14 @@ base: Add metric for Lineage Settings
  .../android/internal/util/AppLockUtils.java   |   48 +
  core/res/AndroidManifest.xml                  |    9 +
  core/res/res/values/config.xml                |    4 +
- core/res/res/values/strings.xml               |    2 +
+ core/res/res/values/strings.xml               |    3 +
  core/res/res/values/symbols.xml               |    4 +
  data/etc/com.android.settings.xml             |    1 +
  .../RemoteInputNotificationRebuilder.java     |    5 +-
  .../SensitiveContentCoordinator.kt            |    6 +-
  .../inflation/NotifUiAdjustmentProvider.kt    |    2 +-
  .../inflation/NotificationRowBinderImpl.java  |    2 +-
- .../row/ExpandableNotificationRow.java        |   26 +-
+ .../row/ExpandableNotificationRow.java        |   25 +-
  .../phone/StatusBarNotificationPresenter.java |    2 +-
  .../metrics_constants/metrics_constants.proto |    3 +
  services/Android.bp                           |    2 +
@@ -91,16 +89,16 @@ base: Add metric for Lineage Settings
  .../locksettings/LockSettingsService.java     |    2 +
  .../server/notification/BubbleExtractor.java  |    6 +-
  .../NotificationManagerInternal.java          |    3 +
- .../NotificationManagerService.java           |   53 +-
+ .../NotificationManagerService.java           |   54 +-
  .../notification/NotificationRecord.java      |   10 +
- .../NotificationRecordExtractorData.java      |   13 +-
+ .../NotificationRecordExtractorData.java      |   11 +-
  .../server/pm/LauncherAppsService.java        |    9 +
  .../server/trust/TrustManagerService.java     |   12 +
  .../server/wm/ActivityStartInterceptor.java   |   49 +
  .../wm/ActivityTaskManagerInternal.java       |    2 +
  .../server/wm/ActivityTaskManagerService.java |   27 +
  .../java/com/android/server/SystemServer.java |    7 +
- 39 files changed, 2617 insertions(+), 28 deletions(-)
+ 39 files changed, 2617 insertions(+), 27 deletions(-)
  create mode 100644 core/java/android/app/AppLockData.aidl
  create mode 100644 core/java/android/app/AppLockData.java
  create mode 100644 core/java/android/app/AppLockManager.java
@@ -115,7 +113,7 @@ base: Add metric for Lineage Settings
 
 diff --git a/core/java/android/app/AppLockData.aidl b/core/java/android/app/AppLockData.aidl
 new file mode 100644
-index 000000000000..020395b53df7
+index 000000000000..073d1efd2505
 --- /dev/null
 +++ b/core/java/android/app/AppLockData.aidl
 @@ -0,0 +1,19 @@
@@ -138,6 +136,7 @@ index 000000000000..020395b53df7
 +package android.app;
 +
 +parcelable AppLockData;
+\ No newline at end of file
 diff --git a/core/java/android/app/AppLockData.java b/core/java/android/app/AppLockData.java
 new file mode 100644
 index 000000000000..cb3352575c9c
@@ -805,7 +804,7 @@ index 22591641cc66..65b52ea87e49 100644
      <attribution android:tag="GeofencingService" android:label="@string/geofencing_service"/>
      <!-- Attribution for Country Detector. -->
 diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
-index 369eb84ccd84..f3e935b4f392 100644
+index 3bc33bac37bc..50006cb132c1 100644
 --- a/core/res/res/values/config.xml
 +++ b/core/res/res/values/config.xml
 @@ -6860,4 +6860,8 @@
@@ -813,20 +812,21 @@ index 369eb84ccd84..f3e935b4f392 100644
      <!-- Whether the media player is shown on the quick settings -->
      <bool name="config_quickSettingsShowMediaPlayer">true</bool>
 +
-+     <!-- List of system apps that are allowed to be locked with app lock.
-+          Use with extreme caution. -->
-+     <string-array name="config_appLockAllowedSystemApps" translatable="false" />
++    <!-- List of system apps that are allowed to be locked with app lock.
++         Use with extreme caution. -->
++    <string-array name="config_appLockAllowedSystemApps" translatable="false" />
  </resources>
 diff --git a/core/res/res/values/strings.xml b/core/res/res/values/strings.xml
-index 4596ca74bf8f..8f7407fe404c 100644
+index 4596ca74bf8f..f38dfb11e899 100644
 --- a/core/res/res/values/strings.xml
 +++ b/core/res/res/values/strings.xml
-@@ -6363,4 +6363,6 @@ ul.</string>
+@@ -6363,4 +6363,7 @@ ul.</string>
      <!-- Communal profile label on a screen. This can be used as a tab label for this profile in tabbed views and can be used to represent the profile in sharing surfaces, etc. [CHAR LIMIT=20] -->
      <string name="profile_label_communal">Communal</string>
  
 +    <!-- App lock -->
 +    <string name="unlock_application">Unlock <xliff:g id="label" example="Telegram">%1$s</xliff:g></string>
++
  </resources>
 diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
 index fd6158d02b8f..344b905af942 100644
@@ -912,7 +912,7 @@ index 70ccc4f3ae43..a3997557f8c1 100644
          } else {
              params.markContentViewsFreeable(FLAG_CONTENT_VIEW_PUBLIC);
 diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/ExpandableNotificationRow.java b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/ExpandableNotificationRow.java
-index b6d4dedfe6f7..892987432839 100644
+index b6d4dedfe6f7..400d73dc522c 100644
 --- a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/ExpandableNotificationRow.java
 +++ b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/ExpandableNotificationRow.java
 @@ -381,6 +381,8 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
@@ -924,11 +924,10 @@ index b6d4dedfe6f7..892987432839 100644
      public NotificationContentView[] getLayouts() {
          return Arrays.copyOf(mLayouts, mLayouts.length);
      }
-@@ -2235,12 +2237,15 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
-     private void updateChildrenVisibility() {
+@@ -2236,11 +2238,15 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
          boolean hideContentWhileLaunching = mExpandAnimationRunning && mGuts != null
                  && mGuts.isExposed();
--        mPrivateLayout.setVisibility(!mShowingPublic && !mIsSummaryWithChildren
+         mPrivateLayout.setVisibility(!mShowingPublic && !mIsSummaryWithChildren
 +        mPrivateLayout.setVisibility(!mForceHideContents
 +                && !mShowingPublic
 +                && !mIsSummaryWithChildren
@@ -944,7 +943,7 @@ index b6d4dedfe6f7..892987432839 100644
          }
          // The limits might have changed if the view suddenly became a group or vice versa
          updateLimits();
-@@ -2415,6 +2420,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
+@@ -2415,6 +2421,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
      }
  
      public boolean isExpandable() {
@@ -952,7 +951,7 @@ index b6d4dedfe6f7..892987432839 100644
          if (mIsSummaryWithChildren && !shouldShowPublic()) {
              return !mChildrenExpanded;
          }
-@@ -2561,6 +2567,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
+@@ -2561,6 +2568,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
  
      @Override
      public int getIntrinsicHeight() {
@@ -960,7 +959,7 @@ index b6d4dedfe6f7..892987432839 100644
          if (isUserLocked()) {
              return getActualHeight();
          } else if (mGuts != null && mGuts.isExposed()) {
-@@ -2773,7 +2780,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
+@@ -2773,7 +2781,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
                  mChildrenContainer.animate().cancel();
              }
              resetAllContentAlphas();
@@ -969,7 +968,7 @@ index b6d4dedfe6f7..892987432839 100644
              updateChildrenVisibility();
          } else {
              animateShowingPublic(delay, duration, mShowingPublic);
-@@ -2848,7 +2855,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
+@@ -2848,7 +2856,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
      }
  
      private boolean shouldShowPublic() {
@@ -978,7 +977,7 @@ index b6d4dedfe6f7..892987432839 100644
      }
  
      public void makeActionsVisibile() {
-@@ -3493,6 +3500,13 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
+@@ -3493,6 +3501,13 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
          }
      }
  
@@ -993,20 +992,20 @@ index b6d4dedfe6f7..892987432839 100644
  
          @Override
 diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarNotificationPresenter.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarNotificationPresenter.java
-index 8e9c0384987d..b8feb6926670 100644
+index 8e9c0384987d..383fb1800a82 100644
 --- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarNotificationPresenter.java
 +++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/StatusBarNotificationPresenter.java
-@@ -315,7 +315,7 @@ class StatusBarNotificationPresenter implements NotificationPresenter, CommandQu
+@@ -337,7 +337,7 @@ class StatusBarNotificationPresenter implements NotificationPresenter, CommandQu
+             new VisualInterruptionCondition(Set.of(PEEK, BUBBLE), "device is in VR mode") {
+                 @Override
+                 public boolean shouldSuppress() {
+-                    return isDeviceInVrMode();
++                    return isDeviceInVrMode() || entry.getSbn().getIsContentSecure();
+                 }
+             };
  
-         @Override
-         public boolean suppressAwakeInterruptions(NotificationEntry entry) {
--            return isDeviceInVrMode();
-+            return isDeviceInVrMode() || entry.getSbn().getIsContentSecure();
-         }
- 
-         @Override
 diff --git a/proto/src/metrics_constants/metrics_constants.proto b/proto/src/metrics_constants/metrics_constants.proto
-index 7ac7859f3c83..3b9318e3c0ca 100644
+index 7ac7859f3c83..a1142fbd50d5 100644
 --- a/proto/src/metrics_constants/metrics_constants.proto
 +++ b/proto/src/metrics_constants/metrics_constants.proto
 @@ -7444,5 +7444,8 @@ message MetricsEvent {
@@ -1014,7 +1013,7 @@ index 7ac7859f3c83..3b9318e3c0ca 100644
      // Add new aosp constants above this line.
      // END OF AOSP CONSTANTS
 +
-+    // Lineage Settings
++    // LineageOS Settings
 +    LINEAGE_SETTINGS = 4000;
    }
  }
@@ -2959,7 +2958,7 @@ index 4b8de4e8c6f1..2f99e620b874 100644
 +        boolean isBubbleUpSuppressed, int userId);
  }
 diff --git a/services/core/java/com/android/server/notification/NotificationManagerService.java b/services/core/java/com/android/server/notification/NotificationManagerService.java
-index fff8f3d2539a..9376fcd9eeed 100755
+index fff8f3d2539a..5b92f7d624ce 100755
 --- a/services/core/java/com/android/server/notification/NotificationManagerService.java
 +++ b/services/core/java/com/android/server/notification/NotificationManagerService.java
 @@ -44,6 +44,7 @@ import static android.app.NotificationManager.ACTION_NOTIFICATION_CHANNEL_GROUP_
@@ -2995,17 +2994,18 @@ index fff8f3d2539a..9376fcd9eeed 100755
          } else if (phase == SystemService.PHASE_DEVICE_SPECIFIC_SERVICES_READY) {
              mPreferencesHelper.updateFixedImportance(mUm.getUsers());
              mPreferencesHelper.migrateNotificationPermissions(mUm.getUsers());
-@@ -3885,7 +3890,8 @@ public class NotificationManagerService extends SystemService {
-         public boolean areNotificationsEnabledForPackage(String pkg, int uid) {
+@@ -3920,8 +3925,8 @@ public class NotificationManagerService extends SystemService {
+         public int getBubblePreferenceForPackage(String pkg, int uid) {
              enforceSystemOrSystemUIOrSamePackage(pkg,
                      "Caller not system or systemui or same package");
+-
 -            if (UserHandle.getCallingUserId() != UserHandle.getUserId(uid)) {
 +            final int userId = UserHandle.getUserId(uid);
 +            if (UserHandle.getCallingUserId() != userId) {
                  getContext().enforceCallingPermission(
                          android.Manifest.permission.INTERACT_ACROSS_USERS,
-                         "canNotifyAsPackage for uid " + uid);
-@@ -4756,7 +4762,8 @@ public class NotificationManagerService extends SystemService {
+                         "getBubblePreferenceForPackage for uid " + uid);
+@@ -4756,7 +4761,8 @@ public class NotificationManagerService extends SystemService {
                              sbn.getOpPkg(),
                              sbn.getId(), sbn.getTag(), sbn.getUid(), sbn.getInitialPid(),
                              notification,
@@ -3015,7 +3015,7 @@ index fff8f3d2539a..9376fcd9eeed 100755
                  }
              }
              return null;
-@@ -6491,6 +6498,8 @@ public class NotificationManagerService extends SystemService {
+@@ -6491,6 +6497,8 @@ public class NotificationManagerService extends SystemService {
                              0, appIntent, PendingIntent.FLAG_IMMUTABLE, null,
                              pkg, appInfo.uid);
                  }
@@ -3024,7 +3024,7 @@ index fff8f3d2539a..9376fcd9eeed 100755
                  final StatusBarNotification summarySbn =
                          new StatusBarNotification(adjustedSbn.getPackageName(),
                                  adjustedSbn.getOpPkg(),
-@@ -6498,13 +6507,16 @@ public class NotificationManagerService extends SystemService {
+@@ -6498,13 +6506,16 @@ public class NotificationManagerService extends SystemService {
                                  GroupHelper.AUTOGROUP_KEY, adjustedSbn.getUid(),
                                  adjustedSbn.getInitialPid(), summaryNotification,
                                  adjustedSbn.getUser(), GroupHelper.AUTOGROUP_KEY,
@@ -3042,7 +3042,7 @@ index fff8f3d2539a..9376fcd9eeed 100755
              }
              if (summaryRecord != null && checkDisqualifyingFeatures(userId, uid,
                      summaryRecord.getSbn().getId(), summaryRecord.getSbn().getTag(), summaryRecord,
-@@ -7023,6 +7035,32 @@ public class NotificationManagerService extends SystemService {
+@@ -7023,6 +7034,32 @@ public class NotificationManagerService extends SystemService {
              // This can also throw IllegalStateException if called too late.
              mZenModeHelper.setDeviceEffectsApplier(applier);
          }
@@ -3075,7 +3075,7 @@ index fff8f3d2539a..9376fcd9eeed 100755
      };
  
      private static boolean isBigPictureWithBitmapOrIcon(Notification n) {
-@@ -7219,9 +7257,11 @@ public class NotificationManagerService extends SystemService {
+@@ -7219,9 +7256,11 @@ public class NotificationManagerService extends SystemService {
  
          mUsageStats.registerEnqueuedByApp(pkg);
  
@@ -3088,7 +3088,7 @@ index fff8f3d2539a..9376fcd9eeed 100755
  
          // setup local book-keeping
          String channelId = notification.getChannelId();
-@@ -7261,6 +7301,8 @@ public class NotificationManagerService extends SystemService {
+@@ -7261,6 +7300,8 @@ public class NotificationManagerService extends SystemService {
          r.setPostSilently(postSilently);
          r.setFlagBubbleRemoved(false);
          r.setPkgAllowedAsConvo(mMsgPkgsAllowedAsConvos.contains(pkg));
@@ -3097,7 +3097,7 @@ index fff8f3d2539a..9376fcd9eeed 100755
          boolean isImportanceFixed = mPermissionHelper.isPermissionFixed(pkg, userId);
          r.setImportanceFixed(isImportanceFixed);
  
-@@ -9530,7 +9572,8 @@ public class NotificationManagerService extends SystemService {
+@@ -9530,7 +9571,8 @@ public class NotificationManagerService extends SystemService {
                          r.getRankingScore(),
                          r.isConversation(),
                          r.getProposedImportance(),
@@ -3136,7 +3136,7 @@ index 4aa2b0e10568..88aa038c7341 100644
      static final class Light {
          public final int color;
 diff --git a/services/core/java/com/android/server/notification/NotificationRecordExtractorData.java b/services/core/java/com/android/server/notification/NotificationRecordExtractorData.java
-index 3f4f7d3bbc38..35d6c57097d4 100644
+index 3f4f7d3bbc38..3e883e7df0e7 100644
 --- a/services/core/java/com/android/server/notification/NotificationRecordExtractorData.java
 +++ b/services/core/java/com/android/server/notification/NotificationRecordExtractorData.java
 @@ -41,6 +41,7 @@ public final class NotificationRecordExtractorData {
@@ -3183,9 +3183,7 @@ index 3f4f7d3bbc38..35d6c57097d4 100644
 +                || mSensitiveContent != r.hasSensitiveContent()
 +                || mIsBubbleUpSuppressedByAppLock != r.isBubbleUpSuppressedByAppLock();
      }
--}
-+}
-\ No newline at end of file
+ }
 diff --git a/services/core/java/com/android/server/pm/LauncherAppsService.java b/services/core/java/com/android/server/pm/LauncherAppsService.java
 index 127bf495d2ac..c0b57f098326 100644
 --- a/services/core/java/com/android/server/pm/LauncherAppsService.java
