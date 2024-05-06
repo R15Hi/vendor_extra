@@ -93,14 +93,14 @@ base: Add metric for Lineage Settings
  .../NotificationManagerInternal.java          |    3 +
  .../NotificationManagerService.java           |   53 +-
  .../notification/NotificationRecord.java      |   10 +
- .../NotificationRecordExtractorData.java      |   11 +-
+ .../NotificationRecordExtractorData.java      |   13 +-
  .../server/pm/LauncherAppsService.java        |    9 +
  .../server/trust/TrustManagerService.java     |   12 +
  .../server/wm/ActivityStartInterceptor.java   |   49 +
  .../wm/ActivityTaskManagerInternal.java       |    2 +
  .../server/wm/ActivityTaskManagerService.java |   27 +
  .../java/com/android/server/SystemServer.java |    7 +
- 39 files changed, 2616 insertions(+), 27 deletions(-)
+ 39 files changed, 2617 insertions(+), 28 deletions(-)
  create mode 100644 core/java/android/app/AppLockData.aidl
  create mode 100644 core/java/android/app/AppLockData.java
  create mode 100644 core/java/android/app/AppLockManager.java
@@ -3136,7 +3136,7 @@ index 4aa2b0e10568..88aa038c7341 100644
      static final class Light {
          public final int color;
 diff --git a/services/core/java/com/android/server/notification/NotificationRecordExtractorData.java b/services/core/java/com/android/server/notification/NotificationRecordExtractorData.java
-index 3f4f7d3bbc38..3e883e7df0e7 100644
+index 3f4f7d3bbc38..35d6c57097d4 100644
 --- a/services/core/java/com/android/server/notification/NotificationRecordExtractorData.java
 +++ b/services/core/java/com/android/server/notification/NotificationRecordExtractorData.java
 @@ -41,6 +41,7 @@ public final class NotificationRecordExtractorData {
@@ -3183,7 +3183,9 @@ index 3f4f7d3bbc38..3e883e7df0e7 100644
 +                || mSensitiveContent != r.hasSensitiveContent()
 +                || mIsBubbleUpSuppressedByAppLock != r.isBubbleUpSuppressedByAppLock();
      }
- }
+-}
++}
+\ No newline at end of file
 diff --git a/services/core/java/com/android/server/pm/LauncherAppsService.java b/services/core/java/com/android/server/pm/LauncherAppsService.java
 index 127bf495d2ac..c0b57f098326 100644
 --- a/services/core/java/com/android/server/pm/LauncherAppsService.java
