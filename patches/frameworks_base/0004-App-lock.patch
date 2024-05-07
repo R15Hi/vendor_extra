@@ -76,7 +76,7 @@ base: Add metric for LineageOS Settings
  .../SensitiveContentCoordinator.kt            |    6 +-
  .../inflation/NotifUiAdjustmentProvider.kt    |    2 +-
  .../inflation/NotificationRowBinderImpl.java  |    2 +-
- .../row/ExpandableNotificationRow.java        |   25 +-
+ .../row/ExpandableNotificationRow.java        |   26 +-
  .../phone/StatusBarNotificationPresenter.java |    2 +-
  .../metrics_constants/metrics_constants.proto |    3 +
  services/Android.bp                           |    2 +
@@ -98,7 +98,7 @@ base: Add metric for LineageOS Settings
  .../wm/ActivityTaskManagerInternal.java       |    2 +
  .../server/wm/ActivityTaskManagerService.java |   27 +
  .../java/com/android/server/SystemServer.java |    7 +
- 39 files changed, 2617 insertions(+), 27 deletions(-)
+ 39 files changed, 2617 insertions(+), 28 deletions(-)
  create mode 100644 core/java/android/app/AppLockData.aidl
  create mode 100644 core/java/android/app/AppLockData.java
  create mode 100644 core/java/android/app/AppLockManager.java
@@ -804,7 +804,7 @@ index 22591641cc66..65b52ea87e49 100644
      <attribution android:tag="GeofencingService" android:label="@string/geofencing_service"/>
      <!-- Attribution for Country Detector. -->
 diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
-index 3bc33bac37bc..50006cb132c1 100644
+index 369eb84ccd84..3aeec07e68a9 100644
 --- a/core/res/res/values/config.xml
 +++ b/core/res/res/values/config.xml
 @@ -6860,4 +6860,8 @@
@@ -912,7 +912,7 @@ index 70ccc4f3ae43..a3997557f8c1 100644
          } else {
              params.markContentViewsFreeable(FLAG_CONTENT_VIEW_PUBLIC);
 diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/ExpandableNotificationRow.java b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/ExpandableNotificationRow.java
-index b6d4dedfe6f7..400d73dc522c 100644
+index b6d4dedfe6f7..892987432839 100644
 --- a/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/ExpandableNotificationRow.java
 +++ b/packages/SystemUI/src/com/android/systemui/statusbar/notification/row/ExpandableNotificationRow.java
 @@ -381,6 +381,8 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
@@ -924,10 +924,11 @@ index b6d4dedfe6f7..400d73dc522c 100644
      public NotificationContentView[] getLayouts() {
          return Arrays.copyOf(mLayouts, mLayouts.length);
      }
-@@ -2236,11 +2238,15 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
+@@ -2235,12 +2237,15 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
+     private void updateChildrenVisibility() {
          boolean hideContentWhileLaunching = mExpandAnimationRunning && mGuts != null
                  && mGuts.isExposed();
-         mPrivateLayout.setVisibility(!mShowingPublic && !mIsSummaryWithChildren
+-        mPrivateLayout.setVisibility(!mShowingPublic && !mIsSummaryWithChildren
 +        mPrivateLayout.setVisibility(!mForceHideContents
 +                && !mShowingPublic
 +                && !mIsSummaryWithChildren
@@ -943,7 +944,7 @@ index b6d4dedfe6f7..400d73dc522c 100644
          }
          // The limits might have changed if the view suddenly became a group or vice versa
          updateLimits();
-@@ -2415,6 +2421,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
+@@ -2415,6 +2420,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
      }
  
      public boolean isExpandable() {
@@ -951,7 +952,7 @@ index b6d4dedfe6f7..400d73dc522c 100644
          if (mIsSummaryWithChildren && !shouldShowPublic()) {
              return !mChildrenExpanded;
          }
-@@ -2561,6 +2568,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
+@@ -2561,6 +2567,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
  
      @Override
      public int getIntrinsicHeight() {
@@ -959,7 +960,7 @@ index b6d4dedfe6f7..400d73dc522c 100644
          if (isUserLocked()) {
              return getActualHeight();
          } else if (mGuts != null && mGuts.isExposed()) {
-@@ -2773,7 +2781,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
+@@ -2773,7 +2780,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
                  mChildrenContainer.animate().cancel();
              }
              resetAllContentAlphas();
@@ -968,7 +969,7 @@ index b6d4dedfe6f7..400d73dc522c 100644
              updateChildrenVisibility();
          } else {
              animateShowingPublic(delay, duration, mShowingPublic);
-@@ -2848,7 +2856,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
+@@ -2848,7 +2855,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
      }
  
      private boolean shouldShowPublic() {
@@ -977,7 +978,7 @@ index b6d4dedfe6f7..400d73dc522c 100644
      }
  
      public void makeActionsVisibile() {
-@@ -3493,6 +3501,13 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
+@@ -3493,6 +3500,13 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
          }
      }
  
